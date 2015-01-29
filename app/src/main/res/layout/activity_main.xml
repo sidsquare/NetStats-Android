@@ -1,3 +1,10 @@
+<android.support.v4.widget.DrawerLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/drawer_layout"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    >
+
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools" android:layout_width="match_parent"
     android:layout_height="match_parent" android:paddingLeft="@dimen/activity_horizontal_margin"
@@ -11,12 +18,10 @@
         android:layout_height="wrap_content"
         android:text="Download"
         android:id="@+id/textView"
-        android:layout_marginTop="89dp"
-        android:layout_marginLeft="39dp"
-        android:layout_marginStart="39dp"
-        android:layout_alignParentTop="true"
-        android:layout_alignParentLeft="true"
-        android:layout_alignParentStart="true" />
+        android:layout_marginTop="48dp"
+        android:layout_below="@+id/textView7"
+        android:layout_alignRight="@+id/textView7"
+        android:layout_alignEnd="@+id/textView7" />
 
     <TextView
         android:layout_width="wrap_content"
@@ -53,20 +58,20 @@
         android:layout_height="wrap_content"
         android:text="Speed"
         android:id="@+id/textView5"
-        android:layout_centerVertical="true"
         android:textSize="25dp"
-        android:layout_alignLeft="@+id/textView2"
-        android:layout_alignStart="@+id/textView2" />
+        android:layout_centerVertical="true"
+        android:layout_alignParentLeft="true"
+        android:layout_alignParentStart="true" />
 
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Download Speed"
         android:id="@+id/textView6"
+        android:layout_marginTop="44dp"
         android:layout_below="@+id/textView5"
-        android:layout_alignLeft="@+id/textView5"
-        android:layout_alignStart="@+id/textView5"
-        android:layout_marginTop="42dp" />
+        android:layout_alignLeft="@+id/textView2"
+        android:layout_alignStart="@+id/textView2" />
 
     <TextView
         android:layout_width="wrap_content"
@@ -75,9 +80,8 @@
         android:id="@+id/textView7"
         android:textSize="25dp"
         android:layout_alignParentTop="true"
-        android:layout_alignLeft="@+id/textView"
-        android:layout_alignStart="@+id/textView"
-        android:layout_marginTop="20dp" />
+        android:layout_alignLeft="@+id/textView5"
+        android:layout_alignStart="@+id/textView5" />
 
     <TextView
         android:layout_width="wrap_content"
@@ -94,9 +98,9 @@
         android:layout_height="wrap_content"
         android:text="---"
         android:id="@+id/tv3"
-        android:layout_above="@+id/textView8"
-        android:layout_toRightOf="@+id/textView7"
-        android:layout_toEndOf="@+id/textView7" />
+        android:layout_alignTop="@+id/textView6"
+        android:layout_alignLeft="@+id/tv2"
+        android:layout_alignStart="@+id/tv2" />
 
     <TextView
         android:layout_width="wrap_content"
@@ -104,7 +108,24 @@
         android:text="---"
         android:id="@+id/tv4"
         android:layout_alignTop="@+id/textView8"
-        android:layout_toRightOf="@+id/textView7"
-        android:layout_alignRight="@+id/tv3"
-        android:layout_alignEnd="@+id/tv3" />
+        android:layout_alignLeft="@+id/tv3"
+        android:layout_alignStart="@+id/tv3" />
+
+    <com.github.mikephil.charting.charts.LineChart
+        android:id="@+id/chart"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_below="@+id/textView8"
+        android:layout_alignParentRight="true"
+        android:layout_alignParentEnd="true" />
 </RelativeLayout>
+    <!-- The navigation drawer -->
+    <ListView android:id="@+id/left_drawer"
+        android:layout_width="210dp"
+        android:layout_height="match_parent"
+        android:layout_gravity="start"
+        android:choiceMode="singleChoice"
+        android:divider="@android:color/transparent"
+        android:dividerHeight="0dp"
+        android:background="#fffefff9" />
+</android.support.v4.widget.DrawerLayout>
