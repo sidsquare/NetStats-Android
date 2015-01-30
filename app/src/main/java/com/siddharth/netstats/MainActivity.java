@@ -14,19 +14,18 @@ import android.widget.ListView;
 import android.widget.TextView;
 
 
-public class MainActivity extends ActionBarActivity
-{
+import android.os.Bundle;
+import android.support.v4.app.FragmentActivity;
+
+public class MainActivity extends ActionBarActivity {
     private Handler handler = new Handler();
     private long rx,tx,temp_rx,temp_tx;
-    private String[] mPlanetTitles;
-    private DrawerLayout mDrawerLayout;
-    private ListView mDrawerList;
 
     @Override
     protected void onCreate(Bundle savedInstanceState)
     {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
+        setContentView(R.layout.re);
 
 
         String[] countryArray = {"Data", "Charts"};
@@ -34,7 +33,7 @@ public class MainActivity extends ActionBarActivity
         ListView listView = (ListView) findViewById(R.id.left_drawer);
         listView.setAdapter(adapter);
 
-        rx=TrafficStats.getTotalRxBytes();rx=rx/(1024);
+        /*rx=TrafficStats.getTotalRxBytes();rx=rx/(1024);
         tx=TrafficStats.getTotalTxBytes();tx=tx/(1024);
         TextView t1=(TextView)findViewById(R.id.tv1);
         t1.setText("0 KB");
@@ -45,7 +44,7 @@ public class MainActivity extends ActionBarActivity
         t1=(TextView)findViewById(R.id.tv4);
         t1.setText("0 KBPS");
         temp_tx=tx;temp_rx=rx;
-        prog();
+        prog();*/
     }
 
     private void prog()
