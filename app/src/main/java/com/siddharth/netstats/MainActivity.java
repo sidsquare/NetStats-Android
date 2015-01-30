@@ -1,5 +1,11 @@
 package com.siddharth.netstats;
 
+import android.app.Activity;
+import android.app.Fragment;
+import android.app.FragmentManager;
+import android.app.FragmentTransaction;
+import android.content.Intent;
+import android.content.res.Configuration;
 import android.net.TrafficStats;
 import android.os.Bundle;
 import android.os.Handler;
@@ -20,18 +26,19 @@ import android.support.v4.app.FragmentActivity;
 public class MainActivity extends ActionBarActivity {
     private Handler handler = new Handler();
     private long rx,tx,temp_rx,temp_tx;
-
+    private ListView listView;
     @Override
     protected void onCreate(Bundle savedInstanceState)
     {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.re);
+        setContentView(R.layout.activity_main);
 
 
         String[] countryArray = {"Data", "Charts"};
         ArrayAdapter adapter = new ArrayAdapter<String>(this, R.layout.nav_menu,R.id.textview, countryArray);
-        ListView listView = (ListView) findViewById(R.id.left_drawer);
+        listView = (ListView) findViewById(R.id.left_drawer);
         listView.setAdapter(adapter);
+        listView.setOnItemClickListener(new DrawerItemClickListener());
 
         /*rx=TrafficStats.getTotalRxBytes();rx=rx/(1024);
         tx=TrafficStats.getTotalTxBytes();tx=tx/(1024);
@@ -46,6 +53,27 @@ public class MainActivity extends ActionBarActivity {
         temp_tx=tx;temp_rx=rx;
         prog();*/
     }
+
+    private class DrawerItemClickListener implements ListView.OnItemClickListener {
+        @Override
+        public void onItemClick(AdapterView parent, View view, int position, long id) {
+            selectItem(position);
+        }
+    }
+
+    private void selectItem(int position)
+    {
+        if (position == 0)
+        {
+
+        }
+        else
+        {
+            Intent t = new Intent(this, cfrag2.class);
+            startActivity(t);
+        }
+    }
+
 
     private void prog()
     {
@@ -101,11 +129,4 @@ public class MainActivity extends ActionBarActivity {
         return super.onOptionsItemSelected(item);
     }
 
-    private class DrawerItemClickListener implements android.widget.AdapterView.OnItemClickListener {
-
-        @Override
-        public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-
-        }
-    }
 }

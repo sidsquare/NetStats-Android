@@ -110,14 +110,6 @@
             android:layout_alignTop="@+id/textView8"
             android:layout_alignLeft="@+id/tv3"
             android:layout_alignStart="@+id/tv3" />
-
-        <com.github.mikephil.charting.charts.LineChart
-            android:id="@+id/chart"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:layout_below="@+id/textView8"
-            android:layout_alignParentRight="true"
-            android:layout_alignParentEnd="true" />
     </RelativeLayout>
     <!-- The navigation drawer -->
     <ListView android:id="@+id/left_drawer"
