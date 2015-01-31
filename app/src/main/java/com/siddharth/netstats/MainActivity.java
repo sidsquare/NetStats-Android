@@ -6,6 +6,7 @@ import android.os.Handler;
 import android.support.v4.app.FragmentTransaction;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarActivity;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.View;
@@ -32,6 +33,16 @@ public class MainActivity extends ActionBarActivity
     {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        cfrag1 newFragment = new cfrag1();
+        FragmentTransaction ft = getSupportFragmentManager().beginTransaction();
+        ft.replace(R.id.content_frame, newFragment, "cfrag1");
+        //ft.addToBackStack("cfrag1");
+        ft.commit();
+        getSupportFragmentManager().executePendingTransactions();
+        cfrag1_is_enabled = true;
+        frag = (cfrag1) getSupportFragmentManager().findFragmentByTag("cfrag1");
+
         menu = new String[]{"Home", "Charts"};
         dLayout = (DrawerLayout) findViewById(R.id.drawer_layout);
         dList = (ListView) findViewById(R.id.left_drawer);
@@ -58,20 +69,7 @@ public class MainActivity extends ActionBarActivity
                     if (frag != null)
                     {
                         cfrag1_is_enabled = true;
-                        if(first_time==true)
-                        {
-                            rx = TrafficStats.getTotalRxBytes();
-                            rx = rx / (1024);
-                            tx = TrafficStats.getTotalTxBytes();
-                            tx = tx / (1024);
-                            temp_tx = tx;
-                            temp_rx = rx;
-                            frag.go(temp1, temp2, temp3, temp4);
-                            prog();
-                            first_time=false;
-                        }
-                        else
-                            frag.go(temp1, temp2, temp3, temp4);
+                        frag.go(temp1, temp2, temp3, temp4);
                     }
                 }
                 else
@@ -86,11 +84,11 @@ public class MainActivity extends ActionBarActivity
                 }
             }
         });
+        prog();
     }
 
     private void prog()
     {
-        first_time=false;
         handler.postDelayed(runnable, 1000);
     }
 
@@ -99,22 +97,41 @@ public class MainActivity extends ActionBarActivity
         @Override
         public void run()
         {
-            long rx1 = TrafficStats.getTotalRxBytes();
-            rx1 = rx1 / (1024);
-            long tx1 = TrafficStats.getTotalTxBytes();
-            tx1 = tx1 / (1024);
-            long down_speed = rx1 - temp_rx, up_speed = tx1 - temp_tx, down_data = rx1 - rx, up_data = tx1 - tx;
-
-            temp1 = Long.toString(down_data) + " KB";
-            temp2 = Long.toString(up_data) + " KB";
-            temp3 = Long.toString(down_speed) + " KBPS";
-            temp4 = Long.toString(up_speed) + " KBPS";
-
-            temp_tx = tx1;
-            temp_rx = rx1;
-            if (cfrag1_is_enabled == true)
+            if(first_time==true)
+            {
+                rx = TrafficStats.getTotalRxBytes();
+                rx = rx / (1024);
+                tx = TrafficStats.getTotalTxBytes();
+                tx = tx / (1024);
+                temp_tx = tx;
+                temp_rx = rx;
                 frag.go(temp1, temp2, temp3, temp4);
-            handler.postDelayed(this, 1000);
+                first_time=false;
+            }
+            try
+            {
+                if (cfrag1_is_enabled == true && frag != null)
+                    frag.go(temp1, temp2, temp3, temp4);
+                long rx1 = TrafficStats.getTotalRxBytes();
+                rx1 = rx1 / (1024);
+                long tx1 = TrafficStats.getTotalTxBytes();
+                tx1 = tx1 / (1024);
+                long down_speed = rx1 - temp_rx, up_speed = tx1 - temp_tx, down_data = rx1 - rx, up_data = tx1 - tx;
+
+                temp1 = Long.toString(down_data) + " KB";
+                temp2 = Long.toString(up_data) + " KB";
+                temp3 = Long.toString(down_speed) + " KBPS";
+                temp4 = Long.toString(up_speed) + " KBPS";
+
+                temp_tx = tx1;
+                temp_rx = rx1;
+
+                handler.postDelayed(this, 1000);
+            }
+            catch (NullPointerException n)
+            {
+                Log.v("piss","off");
+            }
         }
     };
 
