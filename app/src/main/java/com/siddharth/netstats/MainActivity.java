@@ -106,26 +106,32 @@ public class MainActivity extends ActionBarActivity
 
     public void setdata()
     {
+        db = openOrCreateDatabase("database", Context.MODE_PRIVATE, null);
+        Cursor c = db.rawQuery("select down_transfer from transfer_day order by date(date) asc limit 7;", null);
+
 
         //charting
         ArrayList<String> xVals = new ArrayList<String>();
-        int count=10;
-        int range=45;
-        for (int i = 1; i <= count; i++)
+        int count = 7;
+        for (int i = 0; i < count; i++)
         {
-            xVals.add(i % 5 + "");
+            xVals.add(i + "");
         }
         ArrayList<BarEntry> yVals1 = new ArrayList<BarEntry>();
-
-        for (int i = 1; i <= count; i++)
+        c.moveToFirst();
+        int i = 0;
+        while (i<c.getCount())
         {
-            yVals1.add(new BarEntry(i, i));
+            yVals1.add(new BarEntry((float)c.getInt(0)/1024, i));
+            c.moveToNext();
+            i++;
         }
-        BarDataSet set1 = new BarDataSet(yVals1, "DataSet");
+
+        BarDataSet set1 = new BarDataSet(yVals1, "Data Usage in MB");
         set1.setBarSpacePercent(35f);
         ArrayList<BarDataSet> dataSets = new ArrayList<BarDataSet>();
         dataSets.add(set1);
-        frag2.go(xVals,dataSets);
+        frag2.go(xVals, dataSets);
     }
 
     private void prog()
