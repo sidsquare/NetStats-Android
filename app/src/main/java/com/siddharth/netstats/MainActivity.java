@@ -19,7 +19,11 @@ import android.widget.AdapterView.OnItemClickListener;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
 
+import com.github.mikephil.charting.data.BarDataSet;
+import com.github.mikephil.charting.data.BarEntry;
+
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
 
 public class MainActivity extends ActionBarActivity
@@ -32,7 +36,7 @@ public class MainActivity extends ActionBarActivity
     DrawerLayout dLayout;
     ListView dList;
     ArrayAdapter<String> adapter;
-    cfrag1 frag;
+    cfrag1 frag;cfrag2 frag2;
     SQLiteDatabase db;
 
     @Override
@@ -85,13 +89,43 @@ public class MainActivity extends ActionBarActivity
                     cfrag2 newFragment = new cfrag2();
                     FragmentTransaction ft = getSupportFragmentManager().beginTransaction();
                     ft.replace(R.id.content_frame, newFragment, "cfrag2");
-                    //ft.addToBackStack("cfrag2");
+                    //ft.addToBackStack("cfrag1");
                     ft.commit();
-                    getSupportFragmentManager().executePendingTransactions();
+                    getSupportFragmentManager().executePendingTransactions();   //fucking important
+
+                    frag2 = (cfrag2) getSupportFragmentManager().findFragmentByTag("cfrag2");
+                    if (frag != null)
+                    {
+                        setdata();
+                    }
                 }
             }
         });
         prog();
+    }
+
+    public void setdata()
+    {
+
+        //charting
+        ArrayList<String> xVals = new ArrayList<String>();
+        int count=10;
+        int range=45;
+        for (int i = 1; i <= count; i++)
+        {
+            xVals.add(i % 5 + "");
+        }
+        ArrayList<BarEntry> yVals1 = new ArrayList<BarEntry>();
+
+        for (int i = 1; i <= count; i++)
+        {
+            yVals1.add(new BarEntry(i, i));
+        }
+        BarDataSet set1 = new BarDataSet(yVals1, "DataSet");
+        set1.setBarSpacePercent(35f);
+        ArrayList<BarDataSet> dataSets = new ArrayList<BarDataSet>();
+        dataSets.add(set1);
+        frag2.go(xVals,dataSets);
     }
 
     private void prog()
@@ -142,9 +176,9 @@ public class MainActivity extends ActionBarActivity
 
                 temp_tx = tx1;
                 temp_rx = rx1;
-                Log.v("sfs","update transfer_day set down_transfer=down_transfer+"+down_speed+" where date = '"+date+"';");
+                //Log.v("sfs","update transfer_day set down_transfer=down_transfer+"+down_speed+" where date = '"+date+"';");
                 db.execSQL("update transfer_day set down_transfer=down_transfer+"+down_speed+" where date = '"+date+"';");
-                
+
                 handler.postDelayed(this, 1000);
             }
             catch (NullPointerException n)
