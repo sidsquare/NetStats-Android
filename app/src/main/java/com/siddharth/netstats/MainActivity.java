@@ -11,8 +11,10 @@ import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarActivity;
 import android.text.format.Time;
 import android.util.Log;
+import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemClickListener;
@@ -45,6 +47,7 @@ public class MainActivity extends ActionBarActivity
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        //intialize the view
         cfrag1 newFragment = new cfrag1();
         FragmentTransaction ft = getSupportFragmentManager().beginTransaction();
         ft.replace(R.id.content_frame, newFragment, "cfrag1");
@@ -54,6 +57,7 @@ public class MainActivity extends ActionBarActivity
         cfrag1_is_enabled = true;
         frag = (cfrag1) getSupportFragmentManager().findFragmentByTag("cfrag1");
 
+        //intialize the left drawer
         menu = new String[]{"Home", "Charts"};
         dLayout = (DrawerLayout) findViewById(R.id.drawer_layout);
         dList = (ListView) findViewById(R.id.left_drawer);
@@ -61,6 +65,7 @@ public class MainActivity extends ActionBarActivity
         dList.setAdapter(adapter);
         dList.setSelector(android.R.color.holo_blue_dark);
 
+        //drawer click event
         dList.setOnItemClickListener(new OnItemClickListener()
         {
             @Override
@@ -69,6 +74,7 @@ public class MainActivity extends ActionBarActivity
                 dLayout.closeDrawers();
                 if (position == 0)
                 {
+                    //switch fragments
                     cfrag1 newFragment = new cfrag1();
                     FragmentTransaction ft = getSupportFragmentManager().beginTransaction();
                     ft.replace(R.id.content_frame, newFragment, "cfrag1");
@@ -76,6 +82,7 @@ public class MainActivity extends ActionBarActivity
                     ft.commit();
                     getSupportFragmentManager().executePendingTransactions();   //fucking important
 
+                    //intialize the view
                     frag = (cfrag1) getSupportFragmentManager().findFragmentByTag("cfrag1");
                     if (frag != null)
                     {
@@ -86,6 +93,8 @@ public class MainActivity extends ActionBarActivity
                 else
                 {
                     cfrag1_is_enabled = false;
+
+                    //switch fragments
                     cfrag2 newFragment = new cfrag2();
                     FragmentTransaction ft = getSupportFragmentManager().beginTransaction();
                     ft.replace(R.id.content_frame, newFragment, "cfrag2");
@@ -93,6 +102,7 @@ public class MainActivity extends ActionBarActivity
                     ft.commit();
                     getSupportFragmentManager().executePendingTransactions();   //fucking important
 
+                    //intialize the view
                     frag2 = (cfrag2) getSupportFragmentManager().findFragmentByTag("cfrag2");
                     if (frag != null)
                     {
@@ -101,6 +111,7 @@ public class MainActivity extends ActionBarActivity
                 }
             }
         });
+        //call main function
         prog();
     }
 
@@ -136,14 +147,18 @@ public class MainActivity extends ActionBarActivity
 
     private void prog()
     {
+        //open the database
         db = openOrCreateDatabase("database", Context.MODE_PRIVATE, null);
         db.execSQL("CREATE TABLE IF NOT EXISTS transfer_day('date' VARCHAR NOT NULL UNIQUE,'down_transfer' integer);");
+
+        //get today's date and create entry
         Time now = new Time();
         now.setToNow();
         date= new SimpleDateFormat("yyyy-MM-dd").format(new Date());
         Cursor c=db.rawQuery("select * from transfer_day where date=\"" + date + "\";",null);
         if(c.getCount()==0)
             db.execSQL("insert into transfer_day values(\""+date+"\",0);");
+
         handler.postDelayed(runnable, 1000);
     }
 
@@ -152,7 +167,7 @@ public class MainActivity extends ActionBarActivity
         @Override
         public void run()
         {
-
+            //intialize fragment at startup
             if(first_time==true)
             {
                 rx = TrafficStats.getTotalRxBytes();
@@ -166,7 +181,7 @@ public class MainActivity extends ActionBarActivity
             }
             try
             {
-
+                //get and set current stats
                 if (cfrag1_is_enabled == true && frag != null)
                     frag.go(temp1, temp2, temp3, temp4);
                 long rx1 = TrafficStats.getTotalRxBytes();
@@ -201,5 +216,30 @@ public class MainActivity extends ActionBarActivity
         MenuInflater inflater = getMenuInflater();
         inflater.inflate(R.menu.menu_main, menu);
         return super.onCreateOptionsMenu(menu);
+    }
+
+    //prevent exit on back press
+    public boolean onKeyDown(int keyCode, KeyEvent event)
+    {
+        if (keyCode == KeyEvent.KEYCODE_BACK && event.getRepeatCount() == 0)
+        {
+            this.moveTaskToBack(true);
+            return true;
+        }
+        return super.onKeyDown(keyCode, event);
+    }
+
+    //Action Bar left Menu actions
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        // Handle item selection
+        switch (item.getItemId()) {
+            case R.id.action_exit:
+                finish();
+                return true;
+
+            default:
+                return super.onOptionsItemSelected(item);
+        }
     }
 }
