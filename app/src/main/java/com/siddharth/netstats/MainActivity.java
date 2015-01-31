@@ -1,11 +1,15 @@
 package com.siddharth.netstats;
 
+import android.content.Context;
+import android.database.Cursor;
+import android.database.sqlite.SQLiteDatabase;
 import android.net.TrafficStats;
 import android.os.Bundle;
 import android.os.Handler;
 import android.support.v4.app.FragmentTransaction;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarActivity;
+import android.text.format.Time;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -15,18 +19,21 @@ import android.widget.AdapterView.OnItemClickListener;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
 
+import java.text.SimpleDateFormat;
+import java.util.Date;
 
 public class MainActivity extends ActionBarActivity
 {
     boolean cfrag1_is_enabled = false,first_time=true;
     String[] menu;
-    String temp1="0 KB", temp2="0 KB", temp3="0 KBPS", temp4="0 KBPS";
+    String temp1="0 KB", temp2="0 KB", temp3="0 KBPS", temp4="0 KBPS",date;
     public Handler handler = new Handler();
     public long rx, tx, temp_rx, temp_tx;
     DrawerLayout dLayout;
     ListView dList;
     ArrayAdapter<String> adapter;
     cfrag1 frag;
+    SQLiteDatabase db;
 
     @Override
     protected void onCreate(Bundle savedInstanceState)
@@ -89,6 +96,14 @@ public class MainActivity extends ActionBarActivity
 
     private void prog()
     {
+        db = openOrCreateDatabase("database", Context.MODE_PRIVATE, null);
+        db.execSQL("CREATE TABLE IF NOT EXISTS transfer_day('date' VARCHAR NOT NULL UNIQUE,'down_transfer' integer);");
+        Time now = new Time();
+        now.setToNow();
+        date= new SimpleDateFormat("yyyy-MM-dd").format(new Date());
+        Cursor c=db.rawQuery("select * from transfer_day where date=\"" + date + "\";",null);
+        if(c.getCount()==0)
+            db.execSQL("insert into transfer_day values(\""+date+"\",0);");
         handler.postDelayed(runnable, 1000);
     }
 
@@ -97,6 +112,7 @@ public class MainActivity extends ActionBarActivity
         @Override
         public void run()
         {
+
             if(first_time==true)
             {
                 rx = TrafficStats.getTotalRxBytes();
@@ -110,6 +126,7 @@ public class MainActivity extends ActionBarActivity
             }
             try
             {
+
                 if (cfrag1_is_enabled == true && frag != null)
                     frag.go(temp1, temp2, temp3, temp4);
                 long rx1 = TrafficStats.getTotalRxBytes();
@@ -125,7 +142,9 @@ public class MainActivity extends ActionBarActivity
 
                 temp_tx = tx1;
                 temp_rx = rx1;
-
+                Log.v("sfs","update transfer_day set down_transfer=down_transfer+"+down_speed+" where date = '"+date+"';");
+                db.execSQL("update transfer_day set down_transfer=down_transfer+"+down_speed+" where date = '"+date+"';");
+                
                 handler.postDelayed(this, 1000);
             }
             catch (NullPointerException n)
