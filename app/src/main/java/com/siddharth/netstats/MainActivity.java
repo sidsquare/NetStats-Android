@@ -1,6 +1,7 @@
 package com.siddharth.netstats;
 
 import android.content.Context;
+import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.net.TrafficStats;
@@ -41,12 +42,17 @@ public class MainActivity extends ActionBarActivity
     cfrag1 frag;
     cfrag2 frag2;
     SQLiteDatabase db;
-
+    SharedPreferences sharedPref;
     @Override
     protected void onCreate(Bundle savedInstanceState)
     {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        sharedPref= getPreferences(Context.MODE_PRIVATE);
+        SharedPreferences.Editor editor = sharedPref.edit();
+        if(!sharedPref.contains("start_at_boot"))
+            editor.putBoolean("start_at_boot",false);
 
         //intialize the view
         cfrag1 newFragment = new cfrag1();
@@ -119,7 +125,7 @@ public class MainActivity extends ActionBarActivity
     public void setdata()
     {
         db = openOrCreateDatabase("database", Context.MODE_PRIVATE, null);
-        Cursor c = db.rawQuery("select down_transfer from transfer_day order by date(date) asc limit 7;", null);
+        Cursor c = db.rawQuery("select down_transfer from transfer_week order by date(date) asc limit 7;", null);
 
 
         //charting
@@ -150,15 +156,15 @@ public class MainActivity extends ActionBarActivity
     {
         //open the database
         db = openOrCreateDatabase("database", Context.MODE_PRIVATE, null);
-        db.execSQL("CREATE TABLE IF NOT EXISTS transfer_day('date' VARCHAR NOT NULL UNIQUE,'down_transfer' integer);");
+        db.execSQL("CREATE TABLE IF NOT EXISTS transfer_week('date' VARCHAR NOT NULL UNIQUE,'down_transfer' integer);");
 
         //get today's date and create entry
         Time now = new Time();
         now.setToNow();
         date = new SimpleDateFormat("yyyy-MM-dd").format(new Date());
-        Cursor c = db.rawQuery("select * from transfer_day where date=\"" + date + "\";", null);
+        Cursor c = db.rawQuery("select * from transfer_week where date=\"" + date + "\";", null);
         if (c.getCount() == 0)
-            db.execSQL("insert into transfer_day values(\"" + date + "\",0);");
+            db.execSQL("insert into transfer_week values(\"" + date + "\",0);");
 
         handler.postDelayed(runnable, 1000);
     }
@@ -204,12 +210,13 @@ public class MainActivity extends ActionBarActivity
                 Time now = new Time();
                 now.setToNow();
                 String temp = new SimpleDateFormat("yyyy-MM-dd").format(new Date());
-                if(temp.compareTo(date)!=0)
+                if (temp.compareTo(date) != 0)
                 {
-                    date=temp;db.execSQL("insert into transfer_day values(\"" + temp + "\",0);");
+                    date = temp;
+                    db.execSQL("insert into transfer_week values(\"" + temp + "\",0);");
                 }
 
-                db.execSQL("update transfer_day set down_transfer=down_transfer+" + down_speed + " where date = '" + date + "';");
+                db.execSQL("update transfer_week set down_transfer=down_transfer+" + down_speed + " where date = '" + date + "';");
 
                 handler.postDelayed(this, 1000);
             }
@@ -252,6 +259,21 @@ public class MainActivity extends ActionBarActivity
                 return true;
             case R.id.action_settings:
                 return true;
+            case R.id.start_on_boot:
+                if (item.isChecked() == true)
+                {
+                    item.setChecked(false);
+                    SharedPreferences.Editor editor = sharedPref.edit();
+                    editor.putBoolean("start_at_boot",true );
+                    editor.commit();
+                }
+                else
+                {
+                    item.setChecked(true);
+                    SharedPreferences.Editor editor = sharedPref.edit();
+                    editor.putBoolean("start_at_boot", false);
+                    editor.commit();
+                }
             default:
                 return super.onOptionsItemSelected(item);
         }
