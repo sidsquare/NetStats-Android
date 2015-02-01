@@ -3,6 +3,7 @@ package com.siddharth.netstats;
 
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -18,7 +19,7 @@ public class cfrag1 extends Fragment {
     }
     public void go(String temp1,String temp2,String temp3,String temp4 ,String temp5,String temp6)
     {
-        //Log.v("gdfg", "begin");
+        Log.v("gdfg", temp5);
         TextView t1=(TextView)getView().findViewById(R.id.tv1);
         t1.setText(temp1);
         t1=(TextView)getView().findViewById(R.id.tv2);

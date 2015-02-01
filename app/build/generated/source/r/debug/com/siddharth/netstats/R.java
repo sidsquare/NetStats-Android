@@ -1330,7 +1330,7 @@ containing a value of this type.
         public static final int content_frame=0x7f080040;
         public static final int decor_content_parent=0x7f08002f;
         public static final int default_activity_button=0x7f080024;
-        public static final int detail=0x7f080043;
+        public static final int detail=0x7f08004d;
         public static final int dialog=0x7f08001b;
         public static final int disableHome=0x7f08000c;
         public static final int drawer_layout=0x7f08003f;
@@ -1374,12 +1374,12 @@ containing a value of this type.
         public static final int tabMode=0x7f08000b;
         public static final int textView=0x7f080042;
         public static final int textView2=0x7f080044;
-        public static final int textView3=0x7f08004d;
+        public static final int textView3=0x7f080043;
         public static final int textView4=0x7f08004e;
         public static final int textView5=0x7f080048;
         public static final int textView6=0x7f080049;
-        public static final int textView7=0x7f08004a;
-        public static final int textView8=0x7f080046;
+        public static final int textView7=0x7f080046;
+        public static final int textView8=0x7f08004a;
         public static final int textview=0x7f080052;
         public static final int title=0x7f080027;
         public static final int tv1=0x7f080045;

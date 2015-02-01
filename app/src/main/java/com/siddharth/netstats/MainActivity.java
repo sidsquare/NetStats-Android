@@ -3,14 +3,18 @@ package com.siddharth.netstats;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.res.Configuration;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.net.TrafficStats;
 import android.os.Bundle;
 import android.os.Handler;
 import android.support.v4.app.FragmentTransaction;
+import android.support.v4.view.GravityCompat;
 import android.support.v4.widget.DrawerLayout;
+import android.support.v7.app.ActionBar;
 import android.support.v7.app.ActionBarActivity;
+import android.support.v7.app.ActionBarDrawerToggle;
 import android.text.format.Time;
 import android.util.Log;
 import android.view.KeyEvent;
@@ -33,38 +37,39 @@ import java.util.Date;
 public class MainActivity extends ActionBarActivity
 {
     boolean cfrag1_is_enabled = false, first_time = true;
-    String[] menu;
-    String temp1 = "0 KB", temp2 = "0 KB", temp3 = "0 KBPS", temp4 = "0 KBPS", temp5="0 KB",temp6="0 KB",date;
-    public Handler handler = new Handler();
-    public long rx, tx, temp_rx, temp_tx,d_offset=0,u_offset=0;
-    DrawerLayout dLayout;
-    ListView dList;
-    ArrayAdapter<String> adapter;
+    String temp1 = "0 KB", temp2 = "0 KB", temp3 = "0 KBPS", temp4 = "0 KBPS", temp5 = "0 KB", temp6 = "0 KB", date;
+    private Handler handler = new Handler();
+    private long rx, tx, temp_rx, temp_tx, d_offset = 0, u_offset = 0;
     cfrag1 frag;
     cfrag2 frag2;
     SQLiteDatabase db;
     SharedPreferences sharedPref;
+    private String[] mDrawerItems;
+    private DrawerLayout mDrawerLayout;
+    private ListView mDrawerList;
+    private ActionBarDrawerToggle mDrawerToggle;
+
     @Override
     protected void onCreate(Bundle savedInstanceState)
     {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        sharedPref= getSharedPreferences("setting", Context.MODE_PRIVATE);
+        sharedPref = getSharedPreferences("setting", Context.MODE_PRIVATE);
         //String temp= String.valueOf(sharedPref.contains("start_at_boot"));
         //Toast.makeText(this, temp, Toast.LENGTH_LONG).show();
 
         SharedPreferences.Editor editor = sharedPref.edit();
-        if(!sharedPref.contains("start_at_boot"))
-            editor.putBoolean("start_at_boot",false);
-        if(!sharedPref.contains("is_app_open"))
-            editor.putBoolean("is_app_open",true);
+        if (!sharedPref.contains("start_at_boot"))
+            editor.putBoolean("start_at_boot", false);
+        if (!sharedPref.contains("is_app_open"))
+            editor.putBoolean("is_app_open", true);
         editor.commit();
 
         Intent serviceIntent = new Intent(this, service.class);
         startService(serviceIntent);
 
-        //intialize the view
+        //initialize the view
         cfrag1 newFragment = new cfrag1();
         FragmentTransaction ft = getSupportFragmentManager().beginTransaction();
         ft.replace(R.id.content_frame, newFragment, "cfrag1");
@@ -74,21 +79,20 @@ public class MainActivity extends ActionBarActivity
         cfrag1_is_enabled = true;
         frag = (cfrag1) getSupportFragmentManager().findFragmentByTag("cfrag1");
 
-        //intialize the left drawer
-        menu = new String[]{"Home", "Charts"};
-        dLayout = (DrawerLayout) findViewById(R.id.drawer_layout);
-        dList = (ListView) findViewById(R.id.left_drawer);
-        adapter = new ArrayAdapter<String>(this, R.layout.nav_menu, R.id.textview, menu);
-        dList.setAdapter(adapter);
-        dList.setSelector(android.R.color.holo_blue_dark);
+        //initialize the left drawer
+        mDrawerItems = new String[]{"Data", "Charts"};
+        mDrawerLayout = (DrawerLayout) findViewById(R.id.drawer_layout);
+        mDrawerLayout.setDrawerShadow(R.drawable.drawer_shadow, GravityCompat.START);
+        mDrawerList = (ListView) findViewById(R.id.left_drawer);
+        mDrawerList.setAdapter(new ArrayAdapter<String>(this, R.layout.nav_menu, mDrawerItems));
 
         //drawer click event
-        dList.setOnItemClickListener(new OnItemClickListener()
+        mDrawerList.setOnItemClickListener(new OnItemClickListener()
         {
             @Override
             public void onItemClick(AdapterView<?> arg0, View v, int position, long id)
             {
-                dLayout.closeDrawers();
+                mDrawerLayout.closeDrawers();
                 if (position == 0)
                 {
                     //switch fragments
@@ -104,7 +108,7 @@ public class MainActivity extends ActionBarActivity
                     if (frag != null)
                     {
                         cfrag1_is_enabled = true;
-                        frag.go(temp1, temp2, temp3, temp4,temp5,temp6);
+                        frag.go(temp1, temp2, temp3, temp4, temp5, temp6);
                     }
                 }
                 else
@@ -128,8 +132,49 @@ public class MainActivity extends ActionBarActivity
                 }
             }
         });
+
+        //Set the action bar
+        ActionBar actionBar = getSupportActionBar();
+        actionBar.setDisplayHomeAsUpEnabled(true);
+        actionBar.setHomeButtonEnabled(true);
+        mDrawerToggle = new ActionBarDrawerToggle(this, mDrawerLayout, R.string.drawer_open, R.string.drawer_close)
+        {
+            @Override
+            public void onDrawerClosed(View drawerView)
+            {
+                super.onDrawerClosed(drawerView);
+            }
+
+            @Override
+            public void onDrawerOpened(View drawerView)
+            {
+                super.onDrawerOpened(drawerView);
+            }
+        };
+        mDrawerLayout.post(new Runnable()
+        {
+            @Override
+            public void run()
+            {
+                mDrawerToggle.syncState();
+            }
+        });
+
+        mDrawerLayout.setDrawerListener(mDrawerToggle);
+        //mDrawerList.setItemChecked(0, true);
+        if (savedInstanceState == null)
+        {
+        }
+
         //call main function
         prog();
+    }
+
+    @Override
+    public void onConfigurationChanged(Configuration newConfig)
+    {
+        super.onConfigurationChanged(newConfig);
+        mDrawerToggle.onConfigurationChanged(newConfig);
     }
 
     public void setdata()
@@ -191,8 +236,10 @@ public class MainActivity extends ActionBarActivity
                 if (c.getCount() != 0)
                 {
                     c.moveToFirst();
-                    d_offset=c.getInt(0);u_offset=c.getInt(1);
-                    temp5= String.valueOf(d_offset);temp6=String.valueOf(u_offset);
+                    d_offset = c.getInt(0);
+                    u_offset = c.getInt(1);
+                    temp5 = String.valueOf(d_offset) + " KB";
+                    temp6 = String.valueOf(u_offset) + " KB";
                 }
                 rx = TrafficStats.getTotalRxBytes();
                 rx = rx / (1024);
@@ -200,7 +247,7 @@ public class MainActivity extends ActionBarActivity
                 tx = tx / (1024);
                 temp_tx = tx;
                 temp_rx = rx;
-                frag.go(temp1, temp2, temp3, temp4,temp5,temp6);
+                frag.go(temp1, temp2, temp3, temp4, temp5, temp6);
                 first_time = false;
             }
             try
@@ -256,9 +303,9 @@ public class MainActivity extends ActionBarActivity
         // Inflate the menu items for use in the action bar
         MenuInflater inflater = getMenuInflater();
         inflater.inflate(R.menu.menu_main, menu);
-        SharedPreferences prefs = getApplicationContext().getSharedPreferences("setting",Context.MODE_PRIVATE);
+        SharedPreferences prefs = getApplicationContext().getSharedPreferences("setting", Context.MODE_PRIVATE);
         boolean checked = prefs.getBoolean("start_at_boot", false);
-        if(checked==true)
+        if (checked == true)
             menu.findItem(R.id.start_on_boot).setChecked(checked);
         return super.onCreateOptionsMenu(menu);
 
@@ -279,6 +326,10 @@ public class MainActivity extends ActionBarActivity
     @Override
     public boolean onOptionsItemSelected(MenuItem item)
     {
+        if (mDrawerToggle.onOptionsItemSelected(item))
+        {
+            return true;
+        }
         // Handle item selection
         switch (item.getItemId())
         {
