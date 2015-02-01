@@ -34,9 +34,9 @@ public class MainActivity extends ActionBarActivity
 {
     boolean cfrag1_is_enabled = false, first_time = true;
     String[] menu;
-    String temp1 = "0 KB", temp2 = "0 KB", temp3 = "0 KBPS", temp4 = "0 KBPS", date;
+    String temp1 = "0 KB", temp2 = "0 KB", temp3 = "0 KBPS", temp4 = "0 KBPS", temp5="0 KB",temp6="0 KB",date;
     public Handler handler = new Handler();
-    public long rx, tx, temp_rx, temp_tx;
+    public long rx, tx, temp_rx, temp_tx,d_offset=0,u_offset=0;
     DrawerLayout dLayout;
     ListView dList;
     ArrayAdapter<String> adapter;
@@ -104,7 +104,7 @@ public class MainActivity extends ActionBarActivity
                     if (frag != null)
                     {
                         cfrag1_is_enabled = true;
-                        frag.go(temp1, temp2, temp3, temp4);
+                        frag.go(temp1, temp2, temp3, temp4,temp5,temp6);
                     }
                 }
                 else
@@ -166,7 +166,7 @@ public class MainActivity extends ActionBarActivity
     {
         //open the database
         db = openOrCreateDatabase("database", Context.MODE_PRIVATE, null);
-        db.execSQL("CREATE TABLE IF NOT EXISTS transfer_week('date' VARCHAR NOT NULL UNIQUE,'down_transfer' integer);");
+        db.execSQL("CREATE TABLE IF NOT EXISTS transfer_week('date' VARCHAR NOT NULL UNIQUE,'down_transfer' integer,'up_transfer' integer);");
 
         //get today's date and create entry
         Time now = new Time();
@@ -174,7 +174,7 @@ public class MainActivity extends ActionBarActivity
         date = new SimpleDateFormat("yyyy-MM-dd").format(new Date());
         Cursor c = db.rawQuery("select * from transfer_week where date=\"" + date + "\";", null);
         if (c.getCount() == 0)
-            db.execSQL("insert into transfer_week values(\"" + date + "\",0);");
+            db.execSQL("insert into transfer_week values(\"" + date + "\",0,0);");
 
         handler.postDelayed(runnable, 1000);
     }
@@ -187,31 +187,43 @@ public class MainActivity extends ActionBarActivity
             //intialize fragment at startup
             if (first_time == true)
             {
+                Cursor c = db.rawQuery("select down_transfer,up_transfer from transfer_week where date=\"" + date + "\";", null);
+                if (c.getCount() != 0)
+                {
+                    c.moveToFirst();
+                    d_offset=c.getInt(0);u_offset=c.getInt(1);
+                    temp5= String.valueOf(d_offset);temp6=String.valueOf(u_offset);
+                }
                 rx = TrafficStats.getTotalRxBytes();
                 rx = rx / (1024);
                 tx = TrafficStats.getTotalTxBytes();
                 tx = tx / (1024);
                 temp_tx = tx;
                 temp_rx = rx;
-                frag.go(temp1, temp2, temp3, temp4);
+                frag.go(temp1, temp2, temp3, temp4,temp5,temp6);
                 first_time = false;
             }
             try
             {
                 //get and set current stats
                 if (cfrag1_is_enabled == true && frag != null)
-                    frag.go(temp1, temp2, temp3, temp4);
+                    frag.go(temp1, temp2, temp3, temp4, temp5, temp6);
                 long rx1 = TrafficStats.getTotalRxBytes();
                 rx1 = rx1 / (1024);
                 long tx1 = TrafficStats.getTotalTxBytes();
                 tx1 = tx1 / (1024);
                 long down_speed = rx1 - temp_rx, up_speed = tx1 - temp_tx, down_data = rx1 - rx, up_data = tx1 - tx;
+                d_offset += down_speed;
+                u_offset += up_speed;
 
                 //assigning current stat
                 temp1 = Long.toString(down_data) + " KB";
                 temp2 = Long.toString(up_data) + " KB";
                 temp3 = Long.toString(down_speed) + " KBPS";
                 temp4 = Long.toString(up_speed) + " KBPS";
+                temp5 = Long.toString(d_offset) + " KB";
+                temp6 = Long.toString(u_offset) + " KB";
+
 
                 temp_tx = tx1;
                 temp_rx = rx1;
@@ -223,10 +235,11 @@ public class MainActivity extends ActionBarActivity
                 if (temp.compareTo(date) != 0)
                 {
                     date = temp;
-                    db.execSQL("insert into transfer_week values(\"" + temp + "\",0);");
+                    d_offset = u_offset = 0;
+                    db.execSQL("insert into transfer_week values(\"" + temp + "\",0,0);");//handle sql exception later
                 }
 
-                db.execSQL("update transfer_week set down_transfer=down_transfer+" + down_speed + " where date = '" + date + "';");
+                db.execSQL("update transfer_week set down_transfer=down_transfer+" + down_speed + " , up_transfer=up_transfer+" + up_speed + " where date = '" + date + "';");
 
                 handler.postDelayed(this, 1000);
             }
@@ -275,19 +288,18 @@ public class MainActivity extends ActionBarActivity
             case R.id.action_settings:
                 return true;
             case R.id.start_on_boot:
-                if (item.isChecked() == false)
+                if (item.isChecked())
                 {
                     item.setChecked(false);
                     SharedPreferences.Editor editor = sharedPref.edit();
-                    editor.putBoolean("start_at_boot",true );
+                    editor.putBoolean("start_at_boot", false);
                     editor.commit();
-
                 }
                 else
                 {
                     item.setChecked(true);
                     SharedPreferences.Editor editor = sharedPref.edit();
-                    editor.putBoolean("start_at_boot", false);
+                    editor.putBoolean("start_at_boot", true);
                     editor.commit();
                 }
                 return true;
