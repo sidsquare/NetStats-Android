@@ -12,6 +12,5 @@
     <item android:id="@+id/start_on_boot"
           android:title="Start on boot"
           android:checkable="true"
-          android:orderInCategory="2"
-        />
+          android:orderInCategory="2"/>
 </menu>

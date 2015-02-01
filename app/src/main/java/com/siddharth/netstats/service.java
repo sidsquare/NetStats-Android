@@ -1,16 +1,14 @@
 package com.siddharth.netstats;
 
+
 import android.app.Service;
+import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.IBinder;
-import android.preference.PreferenceManager;
 import android.util.Log;
 import android.widget.Toast;
 
-/**
- * Created by Siddharth on 01-02-2015.
- */
 public class service extends Service
 {
     private static final String TAG = "MyService";
@@ -26,10 +24,18 @@ public class service extends Service
     @Override
     public void onStart(Intent intent, int startid)
     {
-        boolean temp;
-        SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(this);
-        temp=preferences.getBoolean("start_at_boot",false);
-        if(temp==true)
+        boolean boot,app;
+
+        Context ctx = getApplicationContext();
+        SharedPreferences prefs = getApplicationContext().getSharedPreferences("setting", Context.MODE_PRIVATE);
+        String g= String.valueOf(prefs.contains("start_at_boot"));
+        Toast.makeText(this, "ss "+ g, Toast.LENGTH_LONG).show();
+
+        boot=prefs.getBoolean("start_at_boot",false);
+        app=prefs.getBoolean("is_app_open",true);
+        g= String.valueOf(boot);
+        Toast.makeText(this,  "ee "+g, Toast.LENGTH_LONG).show();
+        if(boot==true && app==false)
         {
             Intent intents = new Intent(getBaseContext(), MainActivity.class);
             intents.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);

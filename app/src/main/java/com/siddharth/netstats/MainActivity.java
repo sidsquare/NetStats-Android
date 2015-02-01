@@ -1,6 +1,7 @@
 package com.siddharth.netstats;
 
 import android.content.Context;
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
@@ -49,10 +50,19 @@ public class MainActivity extends ActionBarActivity
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        sharedPref= getPreferences(Context.MODE_PRIVATE);
+        sharedPref= getSharedPreferences("setting", Context.MODE_PRIVATE);
+        //String temp= String.valueOf(sharedPref.contains("start_at_boot"));
+        //Toast.makeText(this, temp, Toast.LENGTH_LONG).show();
+
         SharedPreferences.Editor editor = sharedPref.edit();
         if(!sharedPref.contains("start_at_boot"))
             editor.putBoolean("start_at_boot",false);
+        if(!sharedPref.contains("is_app_open"))
+            editor.putBoolean("is_app_open",true);
+        editor.commit();
+
+        Intent serviceIntent = new Intent(this, service.class);
+        startService(serviceIntent);
 
         //intialize the view
         cfrag1 newFragment = new cfrag1();
@@ -233,7 +243,12 @@ public class MainActivity extends ActionBarActivity
         // Inflate the menu items for use in the action bar
         MenuInflater inflater = getMenuInflater();
         inflater.inflate(R.menu.menu_main, menu);
+        SharedPreferences prefs = getApplicationContext().getSharedPreferences("setting",Context.MODE_PRIVATE);
+        boolean checked = prefs.getBoolean("start_at_boot", false);
+        if(checked==true)
+            menu.findItem(R.id.start_on_boot).setChecked(checked);
         return super.onCreateOptionsMenu(menu);
+
     }
 
     //prevent exit on back press
@@ -260,12 +275,13 @@ public class MainActivity extends ActionBarActivity
             case R.id.action_settings:
                 return true;
             case R.id.start_on_boot:
-                if (item.isChecked() == true)
+                if (item.isChecked() == false)
                 {
                     item.setChecked(false);
                     SharedPreferences.Editor editor = sharedPref.edit();
                     editor.putBoolean("start_at_boot",true );
                     editor.commit();
+
                 }
                 else
                 {
@@ -274,6 +290,7 @@ public class MainActivity extends ActionBarActivity
                     editor.putBoolean("start_at_boot", false);
                     editor.commit();
                 }
+                return true;
             default:
                 return super.onOptionsItemSelected(item);
         }
