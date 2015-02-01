@@ -28,13 +28,20 @@ public class service extends Service
 
         Context ctx = getApplicationContext();
         SharedPreferences prefs = getApplicationContext().getSharedPreferences("setting", Context.MODE_PRIVATE);
-        String g= String.valueOf(prefs.contains("start_at_boot"));
-        Toast.makeText(this, "ss "+ g, Toast.LENGTH_LONG).show();
+        //String g= String.valueOf(prefs.contains("start_at_boot"));
+        //Toast.makeText(this, "ss "+ g, Toast.LENGTH_LONG).show();
+
+        SharedPreferences.Editor editor = prefs.edit();
+        if(!prefs.contains("start_at_boot"))
+            editor.putBoolean("start_at_boot",false);
+        if(!prefs.contains("is_app_open"))
+            editor.putBoolean("is_app_open",true);
+        editor.commit();
 
         boot=prefs.getBoolean("start_at_boot",false);
         app=prefs.getBoolean("is_app_open",true);
-        g= String.valueOf(boot);
-        Toast.makeText(this,  "ee "+g, Toast.LENGTH_LONG).show();
+        //g= String.valueOf(boot);
+        //Toast.makeText(this,  "ee "+g, Toast.LENGTH_LONG).show();
         if(boot==true && app==false)
         {
             Intent intents = new Intent(getBaseContext(), MainActivity.class);
