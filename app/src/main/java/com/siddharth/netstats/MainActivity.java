@@ -191,6 +191,7 @@ public class MainActivity extends ActionBarActivity
                 tx1 = tx1 / (1024);
                 long down_speed = rx1 - temp_rx, up_speed = tx1 - temp_tx, down_data = rx1 - rx, up_data = tx1 - tx;
 
+                //assigning current stat
                 temp1 = Long.toString(down_data) + " KB";
                 temp2 = Long.toString(up_data) + " KB";
                 temp3 = Long.toString(down_speed) + " KBPS";
@@ -198,14 +199,16 @@ public class MainActivity extends ActionBarActivity
 
                 temp_tx = tx1;
                 temp_rx = rx1;
+
+                //automatic date change
                 Time now = new Time();
                 now.setToNow();
                 String temp = new SimpleDateFormat("yyyy-MM-dd").format(new Date());
-                if(temp!=date)
+                if(temp.compareTo(date)!=0)
                 {
-                    date=temp;db.execSQL("insert into transfer_day values(\"" + date + "\",0);");
+                    date=temp;db.execSQL("insert into transfer_day values(\"" + temp + "\",0);");
                 }
-                //Log.v("sfs","update transfer_day set down_transfer=down_transfer+"+down_speed+" where date = '"+date+"';");
+
                 db.execSQL("update transfer_day set down_transfer=down_transfer+" + down_speed + " where date = '" + date + "';");
 
                 handler.postDelayed(this, 1000);
