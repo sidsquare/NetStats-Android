@@ -14,7 +14,7 @@ public class cfrag1 extends Fragment {
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
 
-        return inflater.inflate(R.layout.frag1, container, false);
+        return inflater.inflate(R.layout.cfrag1, container, false);
     }
     public void go(String temp1,String temp2,String temp3,String temp4)
     {

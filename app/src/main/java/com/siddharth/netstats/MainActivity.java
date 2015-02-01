@@ -30,15 +30,16 @@ import java.util.Date;
 
 public class MainActivity extends ActionBarActivity
 {
-    boolean cfrag1_is_enabled = false,first_time=true;
+    boolean cfrag1_is_enabled = false, first_time = true;
     String[] menu;
-    String temp1="0 KB", temp2="0 KB", temp3="0 KBPS", temp4="0 KBPS",date;
+    String temp1 = "0 KB", temp2 = "0 KB", temp3 = "0 KBPS", temp4 = "0 KBPS", date;
     public Handler handler = new Handler();
     public long rx, tx, temp_rx, temp_tx;
     DrawerLayout dLayout;
     ListView dList;
     ArrayAdapter<String> adapter;
-    cfrag1 frag;cfrag2 frag2;
+    cfrag1 frag;
+    cfrag2 frag2;
     SQLiteDatabase db;
 
     @Override
@@ -131,9 +132,9 @@ public class MainActivity extends ActionBarActivity
         ArrayList<BarEntry> yVals1 = new ArrayList<BarEntry>();
         c.moveToFirst();
         int i = 0;
-        while (i<c.getCount())
+        while (i < c.getCount())
         {
-            yVals1.add(new BarEntry((float)c.getInt(0)/1024, i));
+            yVals1.add(new BarEntry((float) c.getInt(0) / 1024, i));
             c.moveToNext();
             i++;
         }
@@ -154,10 +155,10 @@ public class MainActivity extends ActionBarActivity
         //get today's date and create entry
         Time now = new Time();
         now.setToNow();
-        date= new SimpleDateFormat("yyyy-MM-dd").format(new Date());
-        Cursor c=db.rawQuery("select * from transfer_day where date=\"" + date + "\";",null);
-        if(c.getCount()==0)
-            db.execSQL("insert into transfer_day values(\""+date+"\",0);");
+        date = new SimpleDateFormat("yyyy-MM-dd").format(new Date());
+        Cursor c = db.rawQuery("select * from transfer_day where date=\"" + date + "\";", null);
+        if (c.getCount() == 0)
+            db.execSQL("insert into transfer_day values(\"" + date + "\",0);");
 
         handler.postDelayed(runnable, 1000);
     }
@@ -168,7 +169,7 @@ public class MainActivity extends ActionBarActivity
         public void run()
         {
             //intialize fragment at startup
-            if(first_time==true)
+            if (first_time == true)
             {
                 rx = TrafficStats.getTotalRxBytes();
                 rx = rx / (1024);
@@ -177,7 +178,7 @@ public class MainActivity extends ActionBarActivity
                 temp_tx = tx;
                 temp_rx = rx;
                 frag.go(temp1, temp2, temp3, temp4);
-                first_time=false;
+                first_time = false;
             }
             try
             {
@@ -197,14 +198,21 @@ public class MainActivity extends ActionBarActivity
 
                 temp_tx = tx1;
                 temp_rx = rx1;
+                Time now = new Time();
+                now.setToNow();
+                String temp = new SimpleDateFormat("yyyy-MM-dd").format(new Date());
+                if(temp!=date)
+                {
+                    date=temp;db.execSQL("insert into transfer_day values(\"" + date + "\",0);");
+                }
                 //Log.v("sfs","update transfer_day set down_transfer=down_transfer+"+down_speed+" where date = '"+date+"';");
-                db.execSQL("update transfer_day set down_transfer=down_transfer+"+down_speed+" where date = '"+date+"';");
+                db.execSQL("update transfer_day set down_transfer=down_transfer+" + down_speed + " where date = '" + date + "';");
 
                 handler.postDelayed(this, 1000);
             }
             catch (NullPointerException n)
             {
-                Log.v("piss","off");
+                Log.v("piss", "off");
             }
         }
     };
@@ -231,13 +239,16 @@ public class MainActivity extends ActionBarActivity
 
     //Action Bar left Menu actions
     @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
+    public boolean onOptionsItemSelected(MenuItem item)
+    {
         // Handle item selection
-        switch (item.getItemId()) {
+        switch (item.getItemId())
+        {
             case R.id.action_exit:
                 finish();
                 return true;
-
+            case R.id.action_settings:
+                return true;
             default:
                 return super.onOptionsItemSelected(item);
         }

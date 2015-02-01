@@ -23,4 +23,5 @@ dependencies {
     compile fileTree(dir: 'libs', include: ['*.jar'])
     compile 'com.android.support:appcompat-v7:21.0.3'
     compile files('libs/mpandroidchartlibrary-1-7-4.jar')
+    compile files('libs/AndroidUnusedResources1.6.2.jar')
 }
