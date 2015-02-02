@@ -29,6 +29,7 @@ import android.widget.ListView;
 
 import com.github.mikephil.charting.data.BarDataSet;
 import com.github.mikephil.charting.data.BarEntry;
+import com.github.mikephil.charting.utils.ColorTemplate;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -201,6 +202,8 @@ public class MainActivity extends ActionBarActivity
         }
 
         BarDataSet set1 = new BarDataSet(yVals1, "Data Usage in MB");
+
+        set1.setColor(ColorTemplate.getHoloBlue());
         set1.setBarSpacePercent(35f);
         ArrayList<BarDataSet> dataSets = new ArrayList<BarDataSet>();
         dataSets.add(set1);

@@ -1,7 +1,5 @@
 package com.siddharth.netstats;
 
-
-import android.database.sqlite.SQLiteDatabase;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.view.LayoutInflater;
@@ -19,18 +17,19 @@ import java.util.ArrayList;
 
 public class cfrag2 extends Fragment {
 
-    SQLiteDatabase db;
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         return inflater.inflate(R.layout.cfrag2, container, false);
     }
+
     public void go(ArrayList<String> xVals,ArrayList<BarDataSet> dataSets)
     {
 
         BarChart b=(BarChart)getView().findViewById(R.id.chart);
         b.set3DEnabled(true);
         b.setDrawBarShadow(false);
+        b.setDepth((float) 2.1);
         //b.setDrawHorizontalGrid(false);
         b.setDrawVerticalGrid(false);
         b.animateXY(1500, 1500);
