@@ -137,24 +137,27 @@ public class service extends Service
                 rx1 = rx1 / (1024);
                 long tx1 = TrafficStats.getTotalTxBytes();
                 tx1 = tx1 / (1024);
-                long down_speed = rx1 - temp_rx, up_speed = tx1 - temp_tx, down_data = rx1 - rx, up_data = tx1 - tx;
+                long down_speed = rx1 - temp_rx, up_speed = tx1 - temp_tx;
                 d_offset += down_speed;
                 u_offset += up_speed;
+
 
                 //assigning current stat
                 SharedPreferences prefs = getApplicationContext().getSharedPreferences("setting", Context.MODE_PRIVATE);
                 SharedPreferences.Editor editor = prefs.edit();
+                if(prefs.getBoolean("do_not_disturb",true)==true)
+                {
+                    rx=rx1;tx=tx1;
+                }
+                long  down_data = rx1 - rx, up_data = tx1 - tx;
+
                 temp1 = Long.toString(down_data) + " KB";editor.putString("temp1", temp1);
                 temp2 = Long.toString(up_data) + " KB";editor.putString("temp2", temp2);
                 temp3 = Long.toString(down_speed) + " KBPS";editor.putString("temp3", temp3);
                 temp4 = Long.toString(up_speed) + " KBPS";editor.putString("temp4", temp4);
                 temp5 = Long.toString(d_offset) + " KB";editor.putString("temp5", temp5);
                 temp6 = Long.toString(u_offset) + " KB";editor.putString("temp6", temp6);
-                Log.v("sss",temp1);
-                if(prefs.getBoolean("do_not_disturb",true)==true)
-                    editor.putString("temp1","0 KB");
                 editor.commit();
-
 
                 temp_tx = tx1;
                 temp_rx = rx1;

@@ -248,6 +248,7 @@ public class MainActivity extends ActionBarActivity
             temp4 = prefs.getString("temp4", "0");
             temp5 = prefs.getString("temp5", "0");
             temp6 = prefs.getString("temp6", "0");
+
             //intialize fragment at startup
             if (first_time == true)
             {
