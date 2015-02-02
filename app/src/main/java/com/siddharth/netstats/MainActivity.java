@@ -209,7 +209,8 @@ public class MainActivity extends ActionBarActivity
             c.moveToNext();
             i++;
         }
-
+        c.close();
+        db.close();
         BarDataSet set1 = new BarDataSet(yVals1, "Data Usage in MB");
 
         set1.setColor(ColorTemplate.getHoloBlue());
@@ -232,7 +233,8 @@ public class MainActivity extends ActionBarActivity
         Cursor c = db.rawQuery("select * from transfer_week where date=\"" + date + "\";", null);
         if (c.getCount() == 0)
             db.execSQL("insert into transfer_week values(\"" + date + "\",0,0);");
-
+        c.close();
+        db.close();
         handler.postDelayed(runnable, 1000);
     }
 

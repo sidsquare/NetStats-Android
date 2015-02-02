@@ -20,9 +20,10 @@ public class service extends Service
 {
     boolean first_time = true;
     String temp1 = "0 KB", temp2 = "0 KB", temp3 = "0 KBPS", temp4 = "0 KBPS", temp5 = "0 KB", temp6 = "0 KB", date;
-    private Handler handler = new Handler();
-    private long rx, tx, temp_rx, temp_tx, d_offset = 0, u_offset = 0;
-    SQLiteDatabase db;
+    Handler handler=new Handler();
+    long rx, tx, temp_rx, temp_tx, d_offset = 0, u_offset = 0,rx1,tx1,down_speed,up_speed;
+    SQLiteDatabase db;SharedPreferences.Editor editor;
+    SharedPreferences prefs;Time now = new Time();
 
     @Override
     public IBinder onBind(Intent intent)
@@ -34,11 +35,13 @@ public class service extends Service
     {
         //Toast.makeText(this, "My Service Stopped", Toast.LENGTH_LONG).show();
         //Log.d(TAG, "onDestroy");
+        handler.removeCallbacksAndMessages(null);
     }
+
     @Override
     public void onStart(Intent intent, int startid)
     {
-        boolean boot, app,dnb;
+        boolean boot, app, dnb;
 
         SharedPreferences prefs = getApplicationContext().getSharedPreferences("setting", Context.MODE_PRIVATE);
         //String g= String.valueOf(prefs.contains("start_at_boot"));
@@ -52,7 +55,10 @@ public class service extends Service
         if (!prefs.contains("do_not_disturb"))
             editor.putBoolean("do_not_disturb", true);
         if (!prefs.contains("temp1"))
-        {editor.putString("temp1", "0 KB");Log.v("gone","gone");}
+        {
+            editor.putString("temp1", "0 KB");
+            Log.v("gone", "gone");
+        }
         if (!prefs.contains("temp2"))
             editor.putString("temp2", "0 KB");
         if (!prefs.contains("temp3"))
@@ -68,17 +74,17 @@ public class service extends Service
 
         boot = prefs.getBoolean("start_at_boot", false);
         app = prefs.getBoolean("is_app_open", true);
-        dnb=prefs.getBoolean("do_not_disturb",true);
-        temp1=prefs.getString("temp1","0");
-        temp2=prefs.getString("temp2","0");
-        temp3=prefs.getString("temp3","0");
-        temp4=prefs.getString("temp4","0");
-        temp5=prefs.getString("temp5","0");
-        temp6=prefs.getString("temp6","0");
+        dnb = prefs.getBoolean("do_not_disturb", true);
+        temp1 = prefs.getString("temp1", "0");
+        temp2 = prefs.getString("temp2", "0");
+        temp3 = prefs.getString("temp3", "0");
+        temp4 = prefs.getString("temp4", "0");
+        temp5 = prefs.getString("temp5", "0");
+        temp6 = prefs.getString("temp6", "0");
 
         //g= String.valueOf(boot);
         //Toast.makeText(this,  "ee "+g, Toast.LENGTH_LONG).show();
-        if (boot && !app && dnb==false)
+        if (boot && !app && dnb == false)
         {
             Intent intents = new Intent(getBaseContext(), MainActivity.class);
             intents.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
@@ -102,7 +108,8 @@ public class service extends Service
         Cursor c = db.rawQuery("select * from transfer_week where date=\"" + date + "\";", null);
         if (c.getCount() == 0)
             db.execSQL("insert into transfer_week values(\"" + date + "\",0,0);");
-
+        c.close();
+        db.close();
         handler.postDelayed(runnable, 1000);
     }
 
@@ -111,6 +118,8 @@ public class service extends Service
         @Override
         public void run()
         {
+            System.gc();
+            db = openOrCreateDatabase("database", Context.MODE_PRIVATE, null);
             //intialize fragment at startup
             if (first_time == true)
             {
@@ -123,6 +132,7 @@ public class service extends Service
                     temp5 = String.valueOf(d_offset) + " KB";
                     temp6 = String.valueOf(u_offset) + " KB";
                 }
+                c.close();
                 rx = TrafficStats.getTotalRxBytes();
                 rx = rx / (1024);
                 tx = TrafficStats.getTotalTxBytes();
@@ -133,37 +143,43 @@ public class service extends Service
             }
             try
             {
-                long rx1 = TrafficStats.getTotalRxBytes();
+                rx1 = TrafficStats.getTotalRxBytes();
                 rx1 = rx1 / (1024);
-                long tx1 = TrafficStats.getTotalTxBytes();
+                tx1 = TrafficStats.getTotalTxBytes();
                 tx1 = tx1 / (1024);
-                long down_speed = rx1 - temp_rx, up_speed = tx1 - temp_tx;
+                down_speed = rx1 - temp_rx; up_speed = tx1 - temp_tx;
                 d_offset += down_speed;
                 u_offset += up_speed;
 
 
                 //assigning current stat
-                SharedPreferences prefs = getApplicationContext().getSharedPreferences("setting", Context.MODE_PRIVATE);
-                SharedPreferences.Editor editor = prefs.edit();
-                if(prefs.getBoolean("do_not_disturb",true)==true)
+                prefs = getApplicationContext().getSharedPreferences("setting", Context.MODE_PRIVATE);
+                 editor = prefs.edit();
+                if (prefs.getBoolean("do_not_disturb", true) == true)
                 {
-                    rx=rx1;tx=tx1;
+                    rx = rx1;
+                    tx = tx1;
                 }
-                long  down_data = rx1 - rx, up_data = tx1 - tx;
+                long down_data = rx1 - rx, up_data = tx1 - tx;
 
-                temp1 = Long.toString(down_data) + " KB";editor.putString("temp1", temp1);
-                temp2 = Long.toString(up_data) + " KB";editor.putString("temp2", temp2);
-                temp3 = Long.toString(down_speed) + " KBPS";editor.putString("temp3", temp3);
-                temp4 = Long.toString(up_speed) + " KBPS";editor.putString("temp4", temp4);
-                temp5 = Long.toString(d_offset) + " KB";editor.putString("temp5", temp5);
-                temp6 = Long.toString(u_offset) + " KB";editor.putString("temp6", temp6);
+                temp1 = Long.toString(down_data) + " KB";
+                editor.putString("temp1", temp1);
+                temp2 = Long.toString(up_data) + " KB";
+                editor.putString("temp2", temp2);
+                temp3 = Long.toString(down_speed) + " KBPS";
+                editor.putString("temp3", temp3);
+                temp4 = Long.toString(up_speed) + " KBPS";
+                editor.putString("temp4", temp4);
+                temp5 = Long.toString(d_offset) + " KB";
+                editor.putString("temp5", temp5);
+                temp6 = Long.toString(u_offset) + " KB";
+                editor.putString("temp6", temp6);
                 editor.commit();
 
                 temp_tx = tx1;
                 temp_rx = rx1;
 
                 //automatic date change
-                Time now = new Time();
                 now.setToNow();
                 String temp = new SimpleDateFormat("yyyy-MM-dd").format(new Date());
                 if (temp.compareTo(date) != 0)
@@ -171,10 +187,13 @@ public class service extends Service
                     date = temp;
                     d_offset = u_offset = 0;
                     db.execSQL("insert into transfer_week values(\"" + temp + "\",0,0);");//handle sql exception later
+
                 }
 
                 db.execSQL("update transfer_week set down_transfer=down_transfer+" + down_speed + " , up_transfer=up_transfer+" + up_speed + " where date = '" + date + "';");
-
+                db.close();
+                temp=temp1=temp2=temp3=temp4=temp5=temp6=null;
+                //handler.removeCallbacksAndMessages(null);
                 handler.postDelayed(this, 1000);
             }
             catch (NullPointerException n)
@@ -183,4 +202,5 @@ public class service extends Service
             }
         }
     };
+
 }
