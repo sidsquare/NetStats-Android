@@ -2,13 +2,6 @@
 <items version="2" >
 
     <item
-        jar="C:\Users\Siddharth\AndroidStudioProjects\NetStats\app\build\intermediates\exploded-aar\com.android.support\support-v4\21.0.3\libs\internal_impl-21.0.3.jar"
-        jumboMode="false"
-        revision="21.1.2"
-        sha1="01ec05bfbafcc07646ba813000bf2ef11742dd03">
-        <dex dex="C:\Users\Siddharth\AndroidStudioProjects\NetStats\app\build\intermediates\pre-dexed\debug\internal_impl-21.0.3-83e2a64f5f31b6fcf9b3e5a3e09355e5ac8d298c.jar" />
-    </item>
-    <item
         jar="C:\Users\Siddharth\AndroidStudioProjects\NetStats\app\build\intermediates\exploded-aar\com.android.support\support-v4\21.0.3\classes.jar"
         jumboMode="false"
         revision="21.1.2"
@@ -30,18 +23,18 @@
         <dex dex="C:\Users\Siddharth\AndroidStudioProjects\NetStats\app\build\intermediates\pre-dexed\debug\support-annotations-21.0.3-a67ef6d339e71ab8ffac1618368a065e663622a5.jar" />
     </item>
     <item
+        jar="C:\Users\Siddharth\AndroidStudioProjects\NetStats\app\build\intermediates\exploded-aar\com.android.support\support-v4\21.0.3\libs\internal_impl-21.0.3.jar"
+        jumboMode="false"
+        revision="21.1.2"
+        sha1="01ec05bfbafcc07646ba813000bf2ef11742dd03">
+        <dex dex="C:\Users\Siddharth\AndroidStudioProjects\NetStats\app\build\intermediates\pre-dexed\debug\internal_impl-21.0.3-83e2a64f5f31b6fcf9b3e5a3e09355e5ac8d298c.jar" />
+    </item>
+    <item
         jar="C:\Users\Siddharth\AndroidStudioProjects\NetStats\app\libs\mpandroidchartlibrary-1-7-4.jar"
         jumboMode="false"
         revision="21.1.2"
         sha1="c685e45ac6491e51640ce3571606ac22dfd4a6a3">
         <dex dex="C:\Users\Siddharth\AndroidStudioProjects\NetStats\app\build\intermediates\pre-dexed\debug\mpandroidchartlibrary-1-7-4-1963e8d1209215792e882326a01b96fe2f9bc490.jar" />
-    </item>
-    <item
-        jar="C:\Users\Siddharth\AndroidStudioProjects\NetStats\app\build\intermediates\exploded-aar\com.badoo.mobile\android-weak-handler\1.0\classes.jar"
-        jumboMode="false"
-        revision="21.1.2"
-        sha1="b82ea4e1a3072739f03bcbfa979fa946604f4312">
-        <dex dex="C:\Users\Siddharth\AndroidStudioProjects\NetStats\app\build\intermediates\pre-dexed\debug\classes-d4466f2ffcef7404cb1474e350463e3675cfdfa0.jar" />
     </item>
 
 </items>

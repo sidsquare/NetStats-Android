@@ -6,6 +6,7 @@ import android.content.SharedPreferences;
 import android.content.res.Configuration;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
+import android.net.TrafficStats;
 import android.os.Bundle;
 import android.os.Handler;
 import android.support.v4.app.FragmentTransaction;
@@ -39,6 +40,7 @@ public class MainActivity extends ActionBarActivity
     boolean cfrag1_is_enabled = false, first_time = true;
     String temp1 = "0 KB", temp2 = "0 KB", temp3 = "0 KBPS", temp4 = "0 KBPS", temp5 = "0 KB", temp6 = "0 KB", date;
     private Handler handler = new Handler();
+    private long rx, tx, temp_rx, temp_tx, d_offset = 0, u_offset = 0;
     cfrag1 frag;
     cfrag2 frag2;
     SQLiteDatabase db;
@@ -59,25 +61,14 @@ public class MainActivity extends ActionBarActivity
         //Toast.makeText(this, temp, Toast.LENGTH_LONG).show();
 
         SharedPreferences.Editor editor = sharedPref.edit();
-        if(!sharedPref.contains("do_not_disturb"))
-            editor.putBoolean("do_not_disturb", false);
         if (!sharedPref.contains("start_at_boot"))
             editor.putBoolean("start_at_boot", false);
         if (!sharedPref.contains("is_app_open"))
             editor.putBoolean("is_app_open", true);
-        if (sharedPref.contains("temp1"))
-            editor.putString("temp1", "0 KB");
-        if (sharedPref.contains("temp2"))
-            editor.putString("temp2", "0 KB");
-        editor.putBoolean("is_app_open", true);
         editor.commit();
 
         Intent serviceIntent = new Intent(this, service.class);
         startService(serviceIntent);
-
-
-        editor.putBoolean("do_not_disturb",false);
-        editor.commit();
 
         //initialize the view
         cfrag1 newFragment = new cfrag1();
@@ -209,8 +200,7 @@ public class MainActivity extends ActionBarActivity
             c.moveToNext();
             i++;
         }
-        c.close();
-        db.close();
+
         BarDataSet set1 = new BarDataSet(yVals1, "Data Usage in MB");
 
         set1.setColor(ColorTemplate.getHoloBlue());
@@ -233,8 +223,7 @@ public class MainActivity extends ActionBarActivity
         Cursor c = db.rawQuery("select * from transfer_week where date=\"" + date + "\";", null);
         if (c.getCount() == 0)
             db.execSQL("insert into transfer_week values(\"" + date + "\",0,0);");
-        c.close();
-        db.close();
+
         handler.postDelayed(runnable, 1000);
     }
 
@@ -243,17 +232,24 @@ public class MainActivity extends ActionBarActivity
         @Override
         public void run()
         {
-            SharedPreferences prefs = getSharedPreferences("setting", Context.MODE_PRIVATE);
-            temp1 = prefs.getString("temp1", "0");
-            temp2 = prefs.getString("temp2", "0");
-            temp3 = prefs.getString("temp3", "0");
-            temp4 = prefs.getString("temp4", "0");
-            temp5 = prefs.getString("temp5", "0");
-            temp6 = prefs.getString("temp6", "0");
-
             //intialize fragment at startup
             if (first_time == true)
             {
+                Cursor c = db.rawQuery("select down_transfer,up_transfer from transfer_week where date=\"" + date + "\";", null);
+                if (c.getCount() != 0)
+                {
+                    c.moveToFirst();
+                    d_offset = c.getInt(0);
+                    u_offset = c.getInt(1);
+                    temp5 = String.valueOf(d_offset) + " KB";
+                    temp6 = String.valueOf(u_offset) + " KB";
+                }
+                rx = TrafficStats.getTotalRxBytes();
+                rx = rx / (1024);
+                tx = TrafficStats.getTotalTxBytes();
+                tx = tx / (1024);
+                temp_tx = tx;
+                temp_rx = rx;
                 frag.go(temp1, temp2, temp3, temp4, temp5, temp6);
                 first_time = false;
             }
@@ -262,6 +258,39 @@ public class MainActivity extends ActionBarActivity
                 //get and set current stats
                 if (cfrag1_is_enabled == true && frag != null)
                     frag.go(temp1, temp2, temp3, temp4, temp5, temp6);
+                long rx1 = TrafficStats.getTotalRxBytes();
+                rx1 = rx1 / (1024);
+                long tx1 = TrafficStats.getTotalTxBytes();
+                tx1 = tx1 / (1024);
+                long down_speed = rx1 - temp_rx, up_speed = tx1 - temp_tx, down_data = rx1 - rx, up_data = tx1 - tx;
+                d_offset += down_speed;
+                u_offset += up_speed;
+
+                //assigning current stat
+                temp1 = Long.toString(down_data) + " KB";
+                temp2 = Long.toString(up_data) + " KB";
+                temp3 = Long.toString(down_speed) + " KBPS";
+                temp4 = Long.toString(up_speed) + " KBPS";
+                temp5 = Long.toString(d_offset) + " KB";
+                temp6 = Long.toString(u_offset) + " KB";
+
+
+                temp_tx = tx1;
+                temp_rx = rx1;
+
+                //automatic date change
+                Time now = new Time();
+                now.setToNow();
+                String temp = new SimpleDateFormat("yyyy-MM-dd").format(new Date());
+                if (temp.compareTo(date) != 0)
+                {
+                    date = temp;
+                    d_offset = u_offset = 0;
+                    db.execSQL("insert into transfer_week values(\"" + temp + "\",0,0);");//handle sql exception later
+                }
+
+                db.execSQL("update transfer_week set down_transfer=down_transfer+" + down_speed + " , up_transfer=up_transfer+" + up_speed + " where date = '" + date + "';");
+
                 handler.postDelayed(this, 1000);
             }
             catch (NullPointerException n)
@@ -331,16 +360,5 @@ public class MainActivity extends ActionBarActivity
             default:
                 return super.onOptionsItemSelected(item);
         }
-    }
-
-    @Override
-    public void onDestroy()
-    {
-        super.onDestroy();
-        Log.v("cluster","fuck");
-        sharedPref = getSharedPreferences("setting", Context.MODE_PRIVATE);
-        SharedPreferences.Editor editor = sharedPref.edit();
-        editor.putBoolean("do_not_disturb", true);
-        editor.commit();
     }
 }
