@@ -183,7 +183,6 @@ public class MainActivity extends ActionBarActivity
         }
 
         // notification
-
         builder.setContentTitle("NetStats");
         builder.setContentText("Down : 0 KBPS         " + "Up : 0 KBPS");
         builder.setTicker("NetStats ");
@@ -399,6 +398,7 @@ public class MainActivity extends ActionBarActivity
     {
         Log.v("cluster","fuck");
         super.onDestroy();
+        notificationManger.cancel(01);
         SharedPreferences.Editor editor = sharedPref.edit();
         editor.putBoolean("dnd", true);
 

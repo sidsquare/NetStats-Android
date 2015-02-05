@@ -1,6 +1,8 @@
 package com.siddharth.netstats;
 
 
+import android.app.Notification;
+import android.app.NotificationManager;
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
@@ -11,7 +13,6 @@ import android.os.Handler;
 import android.os.IBinder;
 import android.text.format.Time;
 import android.util.Log;
-import android.widget.Toast;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -19,10 +20,13 @@ import java.util.Date;
 public class service extends Service
 {
     private String TAG = "MyService", date;
-    int counter = 0;
-
+    static int counter = 0;
+    Notification notification;
+    NotificationManager notificationManger;
+    Notification.Builder builder;
     SQLiteDatabase db;
     Handler h = new Handler();
+    static long speed_rx, speed_tx, rx, tx;
 
     @Override
     public IBinder onBind(Intent intent)
@@ -32,10 +36,10 @@ public class service extends Service
 
     public void onDestroy()
     {
+        //cutting all links
         db.close();
+        notificationManger.cancel(01);
         h.removeCallbacksAndMessages(null);
-        Toast.makeText(this, "My Service Stopped", Toast.LENGTH_LONG).show();
-        Log.d(TAG, "onDestroy");
     }
 
     @Override
@@ -58,13 +62,17 @@ public class service extends Service
         app = prefs.getBoolean("is_app_open", true);
 
 
-        Log.v("Date","lklkl");
+        Log.v("Date", "lklkl");
+
+        //only start app if start on boot is enabled
         if (boot == true && app == false && dnd == false)
         {
             Intent intents = new Intent(getBaseContext(), MainActivity.class);
             intents.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
             startActivity(intents);
         }
+
+        //checking if app has quit and monitoring is required
         if (dnd == true)
         {
             Time now = new Time();
@@ -72,7 +80,27 @@ public class service extends Service
             date = new SimpleDateFormat("yyyy-MM-dd").format(new Date());
             db = openOrCreateDatabase("database", Context.MODE_PRIVATE, null);
             db.execSQL("CREATE TABLE IF NOT EXISTS transfer_week('date' VARCHAR NOT NULL UNIQUE,'down_transfer' integer,'up_transfer' integer);");
-            Log.v("Date",date);
+            Log.v("Date", date);
+            speed_rx = TrafficStats.getTotalRxBytes();
+            speed_rx = speed_rx / (1024);
+            speed_tx = TrafficStats.getTotalTxBytes();
+            speed_tx = speed_tx / (1024);
+
+            //building the notification
+            builder = new Notification.Builder(getApplicationContext());
+            builder.setContentTitle("NetStats");
+            builder.setContentText("Down : 0 KBPS         " + "Up : 0 KBPS");
+            builder.setTicker("NetStats ");
+            builder.setSmallIcon(R.drawable.no);
+            builder.setAutoCancel(true);
+            builder.setPriority(0);
+            builder.setOngoing(true);
+
+            notification = builder.build();
+
+            notificationManger = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+            notificationManger.notify(01, notification);
+
             System.gc();
             h.postDelayed(runnable, 1000);
         }
@@ -83,7 +111,19 @@ public class service extends Service
         @Override
         public void run()
         {
-            Log.v("run","ning");
+            Log.v("run", "ning");
+
+            //getting current stats
+            rx = TrafficStats.getTotalRxBytes();
+            rx = rx / (1024);
+            tx = TrafficStats.getTotalTxBytes();
+            tx = tx / (1024);
+            rx = rx - speed_rx;
+            tx = tx - speed_tx;
+            speed_rx=speed_rx+rx;
+            speed_tx=speed_tx+tx;
+
+            //checking for gc
             if (counter == 60)
             {
                 System.gc();
@@ -91,6 +131,8 @@ public class service extends Service
             }
             else
                 counter++;
+
+            //checking if date has changed
             Time now = new Time();
             now.setToNow();
             String temp = new SimpleDateFormat("yyyy-MM-dd").format(new Date());
@@ -99,11 +141,8 @@ public class service extends Service
                 SharedPreferences prefs = getApplicationContext().getSharedPreferences("setting", Context.MODE_PRIVATE);
                 SharedPreferences.Editor editor = prefs.edit();
 
-                Log.v("change","date");
-                long rx = TrafficStats.getTotalRxBytes();
-                rx = rx / (1024);
-                long tx = TrafficStats.getTotalTxBytes();
-                tx = tx / (1024);
+                Log.v("change", "date");
+
                 long rx1 = prefs.getLong("rx1", 0);
                 long tx1 = prefs.getLong("tx1", 0);
                 rx1 = rx - rx1;
@@ -118,6 +157,11 @@ public class service extends Service
                 System.gc();
                 counter = 0;
             }
+
+            //updating the notification
+            builder.setContentText("Down : " + rx + " KBPS         " + "Up : " + tx + " KBPS");
+            notificationManger.notify(01, builder.build());
+
             h.postDelayed(this, 1000);
         }
     };
