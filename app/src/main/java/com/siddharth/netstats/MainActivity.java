@@ -1,5 +1,7 @@
 package com.siddharth.netstats;
 
+import android.app.Notification;
+import android.app.NotificationManager;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -49,12 +51,16 @@ public class MainActivity extends ActionBarActivity
     private DrawerLayout mDrawerLayout;
     private ListView mDrawerList;
     private ActionBarDrawerToggle mDrawerToggle;
+    Notification notification;
+    NotificationManager notificationManger ;
+    Notification.Builder builder;
 
     @Override
     protected void onCreate(Bundle savedInstanceState)
     {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        builder = new Notification.Builder(getApplicationContext());
 
         sharedPref = getSharedPreferences("setting", Context.MODE_PRIVATE);
 
@@ -70,10 +76,10 @@ public class MainActivity extends ActionBarActivity
 
         editor.commit();
 
-        d_offset=sharedPref.getLong("rx1",0);
-        u_offset=sharedPref.getLong("tx1",0);
-        editor.putLong("rx1",0);
-        editor.putLong("tx1",0);
+        d_offset = sharedPref.getLong("rx1", 0);
+        u_offset = sharedPref.getLong("tx1", 0);
+        editor.putLong("rx1", 0);
+        editor.putLong("tx1", 0);
         editor.commit();
 
         stopService(new Intent(this, service.class));
@@ -176,6 +182,20 @@ public class MainActivity extends ActionBarActivity
         {
         }
 
+        // notification
+
+        builder.setContentTitle("NetStats");
+        builder.setContentText("Down : 0 KBPS         " + "Up : 0 KBPS");
+        builder.setTicker("NetStats ");
+        builder.setSmallIcon(R.drawable.no);
+        builder.setAutoCancel(true);
+        builder.setPriority(0);
+        builder.setOngoing(true);
+
+        notification = builder.build();
+
+        notificationManger = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+        notificationManger.notify(01, notification);
         //call main function
         prog();
     }
@@ -198,7 +218,7 @@ public class MainActivity extends ActionBarActivity
         int count = 7;
         for (int i = 0; i < count; i++)
         {
-            xVals.add(i + "");
+            xVals.add(""+i);
         }
         ArrayList<BarEntry> yVals1 = new ArrayList<BarEntry>();
         c.moveToFirst();
@@ -216,6 +236,7 @@ public class MainActivity extends ActionBarActivity
         set1.setBarSpacePercent(35f);
         ArrayList<BarDataSet> dataSets = new ArrayList<BarDataSet>();
         dataSets.add(set1);
+
         frag2.go(xVals, dataSets);
     }
 
@@ -297,11 +318,12 @@ public class MainActivity extends ActionBarActivity
                 {
                     date = temp;
                     d_offset = u_offset = 0;
-                    db.execSQL("insert into transfer_week values(\"" + temp + "\",0,0);");//change date back to original --- handle sql exception later
+                    db.execSQL("insert into transfer_week values(\"" + temp + "\",0,0);");//changing date back to original --- handle sql exception later
                 }
 
                 db.execSQL("update transfer_week set down_transfer=down_transfer+" + down_speed + " , up_transfer=up_transfer+" + up_speed + " where date = '" + date + "';");
-
+                builder.setContentText("Down : " + down_speed + " KBPS         " + "Up : " + up_speed + " KBPS");
+                notificationManger.notify(01, builder.build());
                 handler.postDelayed(this, 1000);
             }
             catch (NullPointerException n)

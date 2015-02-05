@@ -73,6 +73,7 @@ public class service extends Service
             db = openOrCreateDatabase("database", Context.MODE_PRIVATE, null);
             db.execSQL("CREATE TABLE IF NOT EXISTS transfer_week('date' VARCHAR NOT NULL UNIQUE,'down_transfer' integer,'up_transfer' integer);");
             Log.v("Date",date);
+            System.gc();
             h.postDelayed(runnable, 1000);
         }
     }
@@ -83,7 +84,7 @@ public class service extends Service
         public void run()
         {
             Log.v("run","ning");
-            if (counter == 5)
+            if (counter == 60)
             {
                 System.gc();
                 counter = 0;
