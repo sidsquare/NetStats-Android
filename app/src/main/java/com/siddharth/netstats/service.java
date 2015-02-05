@@ -3,6 +3,7 @@ package com.siddharth.netstats;
 
 import android.app.Notification;
 import android.app.NotificationManager;
+import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
@@ -19,7 +20,7 @@ import java.util.Date;
 
 public class service extends Service
 {
-    private String TAG = "MyService", date;
+    private String date;
     static int counter = 0;
     Notification notification;
     NotificationManager notificationManger;
@@ -87,14 +88,17 @@ public class service extends Service
             speed_tx = speed_tx / (1024);
 
             //building the notification
+            Intent notificationIntent = new Intent(this, MainActivity.class);
+            notificationIntent.setFlags(Intent.FLAG_ACTIVITY_BROUGHT_TO_FRONT);
+            PendingIntent pendingIntent = PendingIntent.getActivity(this,0,notificationIntent,PendingIntent.FLAG_UPDATE_CURRENT);
             builder = new Notification.Builder(getApplicationContext());
-            builder.setContentTitle("NetStats");
+            builder.setContentTitle("NetStats (Service)");
             builder.setContentText("Down : 0 KBPS         " + "Up : 0 KBPS");
-            builder.setTicker("NetStats ");
             builder.setSmallIcon(R.drawable.no);
             builder.setAutoCancel(true);
             builder.setPriority(0);
             builder.setOngoing(true);
+            builder.setContentIntent(pendingIntent);
 
             notification = builder.build();
 

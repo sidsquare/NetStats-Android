@@ -2,6 +2,7 @@ package com.siddharth.netstats;
 
 import android.app.Notification;
 import android.app.NotificationManager;
+import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -96,7 +97,7 @@ public class MainActivity extends ActionBarActivity
         frag = (cfrag1) getSupportFragmentManager().findFragmentByTag("cfrag1");
 
         //initialize the left drawer
-        mDrawerItems = new String[]{"Data", "Charts"};
+        mDrawerItems = new String[]{"Data", "Charts","Settings"};
         mDrawerLayout = (DrawerLayout) findViewById(R.id.drawer_layout);
         mDrawerLayout.setDrawerShadow(R.drawable.drawer_shadow, GravityCompat.START);
         mDrawerList = (ListView) findViewById(R.id.left_drawer);
@@ -127,7 +128,7 @@ public class MainActivity extends ActionBarActivity
                         frag.go(temp1, temp2, temp3, temp4, temp5, temp6);
                     }
                 }
-                else
+                else if(position==1)
                 {
                     cfrag1_is_enabled = false;
 
@@ -145,6 +146,10 @@ public class MainActivity extends ActionBarActivity
                     {
                         setdata();
                     }
+                }
+                else
+                {
+
                 }
             }
         });
@@ -183,18 +188,20 @@ public class MainActivity extends ActionBarActivity
         }
 
         // notification
+        Intent notificationIntent = new Intent(this, MainActivity.class);
+        notificationIntent.setFlags(Intent.FLAG_ACTIVITY_BROUGHT_TO_FRONT);
+        PendingIntent pendingIntent = PendingIntent.getActivity(this,0,notificationIntent,PendingIntent.FLAG_UPDATE_CURRENT);
         builder.setContentTitle("NetStats");
         builder.setContentText("Down : 0 KBPS         " + "Up : 0 KBPS");
-        builder.setTicker("NetStats ");
         builder.setSmallIcon(R.drawable.no);
         builder.setAutoCancel(true);
         builder.setPriority(0);
         builder.setOngoing(true);
-
+        builder.setContentIntent(pendingIntent);
         notification = builder.build();
-
         notificationManger = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
         notificationManger.notify(01, notification);
+
         //call main function
         prog();
     }
