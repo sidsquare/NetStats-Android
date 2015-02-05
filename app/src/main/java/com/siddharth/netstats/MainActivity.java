@@ -40,7 +40,7 @@ public class MainActivity extends ActionBarActivity
     boolean cfrag1_is_enabled = false, first_time = true;
     String temp1 = "0 KB", temp2 = "0 KB", temp3 = "0 KBPS", temp4 = "0 KBPS", temp5 = "0 KB", temp6 = "0 KB", date;
     private Handler handler = new Handler();
-    private long rx, tx, temp_rx, temp_tx, d_offset = 0, u_offset = 0;
+    private long rx, tx, temp_rx, temp_tx, d_offset = 0, u_offset = 0,rx1,tx1;
     cfrag1 frag;
     cfrag2 frag2;
     SQLiteDatabase db;
@@ -57,18 +57,27 @@ public class MainActivity extends ActionBarActivity
         setContentView(R.layout.activity_main);
 
         sharedPref = getSharedPreferences("setting", Context.MODE_PRIVATE);
-        //String temp= String.valueOf(sharedPref.contains("start_at_boot"));
-        //Toast.makeText(this, temp, Toast.LENGTH_LONG).show();
 
         SharedPreferences.Editor editor = sharedPref.edit();
         if (!sharedPref.contains("start_at_boot"))
             editor.putBoolean("start_at_boot", false);
         if (!sharedPref.contains("is_app_open"))
             editor.putBoolean("is_app_open", true);
+        if (!sharedPref.contains("dnd"))
+            editor.putBoolean("dnd", false);
+        editor.putBoolean("is_app_open", true);
+        editor.putBoolean("dnd", false);
+
         editor.commit();
 
-        Intent serviceIntent = new Intent(this, service.class);
-        startService(serviceIntent);
+        d_offset=sharedPref.getLong("rx1",0);
+        u_offset=sharedPref.getLong("tx1",0);
+        editor.putLong("rx1",0);
+        editor.putLong("tx1",0);
+        editor.commit();
+
+        stopService(new Intent(this, service.class));
+        startService(new Intent(this, service.class));
 
         //initialize the view
         cfrag1 newFragment = new cfrag1();
@@ -244,6 +253,7 @@ public class MainActivity extends ActionBarActivity
                     temp5 = String.valueOf(d_offset) + " KB";
                     temp6 = String.valueOf(u_offset) + " KB";
                 }
+
                 rx = TrafficStats.getTotalRxBytes();
                 rx = rx / (1024);
                 tx = TrafficStats.getTotalTxBytes();
@@ -258,10 +268,11 @@ public class MainActivity extends ActionBarActivity
                 //get and set current stats
                 if (cfrag1_is_enabled == true && frag != null)
                     frag.go(temp1, temp2, temp3, temp4, temp5, temp6);
-                long rx1 = TrafficStats.getTotalRxBytes();
+                rx1 = TrafficStats.getTotalRxBytes();
                 rx1 = rx1 / (1024);
-                long tx1 = TrafficStats.getTotalTxBytes();
+                tx1 = TrafficStats.getTotalTxBytes();
                 tx1 = tx1 / (1024);
+                Log.v("rx1", String.valueOf(rx1));
                 long down_speed = rx1 - temp_rx, up_speed = tx1 - temp_tx, down_data = rx1 - rx, up_data = tx1 - tx;
                 d_offset += down_speed;
                 u_offset += up_speed;
@@ -286,7 +297,7 @@ public class MainActivity extends ActionBarActivity
                 {
                     date = temp;
                     d_offset = u_offset = 0;
-                    db.execSQL("insert into transfer_week values(\"" + temp + "\",0,0);");//handle sql exception later
+                    db.execSQL("insert into transfer_week values(\"" + temp + "\",0,0);");//change date back to original --- handle sql exception later
                 }
 
                 db.execSQL("update transfer_week set down_transfer=down_transfer+" + down_speed + " , up_transfer=up_transfer+" + up_speed + " where date = '" + date + "';");
@@ -360,5 +371,25 @@ public class MainActivity extends ActionBarActivity
             default:
                 return super.onOptionsItemSelected(item);
         }
+    }
+    @Override
+    public void onDestroy()
+    {
+        Log.v("cluster","fuck");
+        super.onDestroy();
+        SharedPreferences.Editor editor = sharedPref.edit();
+        editor.putBoolean("dnd", true);
+
+        rx1 = TrafficStats.getTotalRxBytes();
+        rx1 = rx1 / (1024);
+        tx1 = TrafficStats.getTotalTxBytes();
+        tx1 = tx1 / (1024);
+
+        editor.putLong("rx1", rx1);
+        editor.putLong("tx1",tx1);
+        editor.commit();
+        Log.v("rx1", String.valueOf(rx1));
+        Intent serviceIntent = new Intent(this, service.class);
+        startService(serviceIntent);
     }
 }
