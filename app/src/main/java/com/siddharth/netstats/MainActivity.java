@@ -1,5 +1,6 @@
 package com.siddharth.netstats;
 
+import android.app.FragmentTransaction;
 import android.app.Notification;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
@@ -12,7 +13,6 @@ import android.database.sqlite.SQLiteDatabase;
 import android.net.TrafficStats;
 import android.os.Bundle;
 import android.os.Handler;
-import android.support.v4.app.FragmentTransaction;
 import android.support.v4.view.GravityCompat;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBar;
@@ -38,23 +38,27 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 
+
 public class MainActivity extends ActionBarActivity
 {
+
     boolean cfrag1_is_enabled = false, first_time = true;
     String temp1 = "0 KB", temp2 = "0 KB", temp3 = "0 KBPS", temp4 = "0 KBPS", temp5 = "0 KB", temp6 = "0 KB", date;
     private Handler handler = new Handler();
-    private long rx, tx, temp_rx, temp_tx, d_offset = 0, u_offset = 0,rx1,tx1;
+    private long rx, tx, temp_rx, temp_tx, d_offset = 0, u_offset = 0, rx1, tx1;
     cfrag1 frag;
     cfrag2 frag2;
+    preference prefe;
     SQLiteDatabase db;
     SharedPreferences sharedPref;
     private String[] mDrawerItems;
     private DrawerLayout mDrawerLayout;
     private ListView mDrawerList;
     private ActionBarDrawerToggle mDrawerToggle;
-    Notification notification;
-    NotificationManager notificationManger ;
-    Notification.Builder builder;
+    public Notification notification;
+    public NotificationManager notificationManger;
+    public Notification.Builder builder;
+    public SharedPreferences.Editor editor;
 
     @Override
     protected void onCreate(Bundle savedInstanceState)
@@ -65,9 +69,13 @@ public class MainActivity extends ActionBarActivity
 
         sharedPref = getSharedPreferences("setting", Context.MODE_PRIVATE);
 
-        SharedPreferences.Editor editor = sharedPref.edit();
+        editor = sharedPref.edit();
         if (!sharedPref.contains("start_at_boot"))
             editor.putBoolean("start_at_boot", false);
+        if (!sharedPref.contains("noti_visible"))
+            editor.putBoolean("noti_visible", false);
+        if (!sharedPref.contains("not_pers"))
+            editor.putBoolean("not_pers", false);
         if (!sharedPref.contains("is_app_open"))
             editor.putBoolean("is_app_open", true);
         if (!sharedPref.contains("dnd"))
@@ -88,16 +96,16 @@ public class MainActivity extends ActionBarActivity
 
         //initialize the view
         cfrag1 newFragment = new cfrag1();
-        FragmentTransaction ft = getSupportFragmentManager().beginTransaction();
+        FragmentTransaction ft = getFragmentManager().beginTransaction();
         ft.replace(R.id.content_frame, newFragment, "cfrag1");
         //ft.addToBackStack("cfrag1");
         ft.commit();
-        getSupportFragmentManager().executePendingTransactions();
+        getFragmentManager().executePendingTransactions();
         cfrag1_is_enabled = true;
-        frag = (cfrag1) getSupportFragmentManager().findFragmentByTag("cfrag1");
+        frag = (cfrag1) getFragmentManager().findFragmentByTag("cfrag1");
 
         //initialize the left drawer
-        mDrawerItems = new String[]{"Data", "Charts","Settings"};
+        mDrawerItems = new String[]{"Data", "Charts", "Settings"};
         mDrawerLayout = (DrawerLayout) findViewById(R.id.drawer_layout);
         mDrawerLayout.setDrawerShadow(R.drawable.drawer_shadow, GravityCompat.START);
         mDrawerList = (ListView) findViewById(R.id.left_drawer);
@@ -114,34 +122,34 @@ public class MainActivity extends ActionBarActivity
                 {
                     //switch fragments
                     cfrag1 newFragment = new cfrag1();
-                    FragmentTransaction ft = getSupportFragmentManager().beginTransaction();
+                    FragmentTransaction ft = getFragmentManager().beginTransaction();
                     ft.replace(R.id.content_frame, newFragment, "cfrag1");
                     //ft.addToBackStack("cfrag1");
                     ft.commit();
-                    getSupportFragmentManager().executePendingTransactions();   //fucking important
+                    getFragmentManager().executePendingTransactions();   //fucking important
 
                     //intialize the view
-                    frag = (cfrag1) getSupportFragmentManager().findFragmentByTag("cfrag1");
+                    frag = (cfrag1) getFragmentManager().findFragmentByTag("cfrag1");
                     if (frag != null)
                     {
                         cfrag1_is_enabled = true;
                         frag.go(temp1, temp2, temp3, temp4, temp5, temp6);
                     }
                 }
-                else if(position==1)
+                else if (position == 1)
                 {
                     cfrag1_is_enabled = false;
 
                     //switch fragments
                     cfrag2 newFragment = new cfrag2();
-                    FragmentTransaction ft = getSupportFragmentManager().beginTransaction();
+                    FragmentTransaction ft = getFragmentManager().beginTransaction();
                     ft.replace(R.id.content_frame, newFragment, "cfrag2");
                     //ft.addToBackStack("cfrag1");
                     ft.commit();
-                    getSupportFragmentManager().executePendingTransactions();   //fucking important
+                    getFragmentManager().executePendingTransactions();   //fucking important
 
                     //intialize the view
-                    frag2 = (cfrag2) getSupportFragmentManager().findFragmentByTag("cfrag2");
+                    frag2 = (cfrag2) getFragmentManager().findFragmentByTag("cfrag2");
                     if (frag != null)
                     {
                         setdata();
@@ -149,6 +157,18 @@ public class MainActivity extends ActionBarActivity
                 }
                 else
                 {
+                    cfrag1_is_enabled = false;
+
+                    //switch fragments
+                    preference newFragment = new preference();
+                    FragmentTransaction ft = getFragmentManager().beginTransaction();
+                    ft.replace(R.id.content_frame, newFragment, "prefe");
+                    //ft.addToBackStack("cfrag1");
+                    ft.commit();
+                    getFragmentManager().executePendingTransactions();   //fucking important
+
+                    //intialize the view
+                    prefe = (preference) getFragmentManager().findFragmentByTag("prefe");
 
                 }
             }
@@ -190,17 +210,24 @@ public class MainActivity extends ActionBarActivity
         // notification
         Intent notificationIntent = new Intent(this, MainActivity.class);
         notificationIntent.setFlags(Intent.FLAG_ACTIVITY_BROUGHT_TO_FRONT);
-        PendingIntent pendingIntent = PendingIntent.getActivity(this,0,notificationIntent,PendingIntent.FLAG_UPDATE_CURRENT);
+        PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, notificationIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+
+        Intent intent = new Intent(this, notification.class);
+        PendingIntent pendintIntent = PendingIntent.getBroadcast(this, 0, intent, 0);
+        builder.setDeleteIntent(pendintIntent);
         builder.setContentTitle("NetStats");
         builder.setContentText("Down : 0 KBPS         " + "Up : 0 KBPS");
         builder.setSmallIcon(R.drawable.no);
         builder.setAutoCancel(true);
         builder.setPriority(0);
-        builder.setOngoing(true);
+        if (sharedPref.getBoolean("not_pers", false))
+            builder.setOngoing(true);
         builder.setContentIntent(pendingIntent);
         notification = builder.build();
         notificationManger = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
         notificationManger.notify(01, notification);
+        editor.putBoolean("noti_visible", true);
+        editor.commit();
 
         //call main function
         prog();
@@ -224,7 +251,7 @@ public class MainActivity extends ActionBarActivity
         int count = 7;
         for (int i = 0; i < count; i++)
         {
-            xVals.add(""+i);
+            xVals.add("" + i);
         }
         ArrayList<BarEntry> yVals1 = new ArrayList<BarEntry>();
         c.moveToFirst();
@@ -245,6 +272,8 @@ public class MainActivity extends ActionBarActivity
 
         frag2.go(xVals, dataSets);
     }
+
+
 
     private void prog()
     {
@@ -328,8 +357,22 @@ public class MainActivity extends ActionBarActivity
                 }
 
                 db.execSQL("update transfer_week set down_transfer=down_transfer+" + down_speed + " , up_transfer=up_transfer+" + up_speed + " where date = '" + date + "';");
-                builder.setContentText("Down : " + down_speed + " KBPS         " + "Up : " + up_speed + " KBPS");
-                notificationManger.notify(01, builder.build());
+
+                if (!sharedPref.getBoolean("not_pers", false))
+                    builder.setOngoing(false);
+                else
+                {
+                    builder.setOngoing(true);
+                    editor.putBoolean("noti_visible", true);
+                    editor.commit();
+                }
+
+                if (sharedPref.getBoolean("noti_visible", false))
+                {
+                    builder.setContentText("Down : " + down_speed + " KBPS         " + "Up : " + up_speed + " KBPS");
+                    notificationManger.notify(01, builder.build());
+                }
+
                 handler.postDelayed(this, 1000);
             }
             catch (NullPointerException n)
@@ -346,9 +389,6 @@ public class MainActivity extends ActionBarActivity
         MenuInflater inflater = getMenuInflater();
         inflater.inflate(R.menu.menu_main, menu);
         SharedPreferences prefs = getApplicationContext().getSharedPreferences("setting", Context.MODE_PRIVATE);
-        boolean checked = prefs.getBoolean("start_at_boot", false);
-        if (checked == true)
-            menu.findItem(R.id.start_on_boot).setChecked(checked);
         return super.onCreateOptionsMenu(menu);
 
     }
@@ -378,32 +418,15 @@ public class MainActivity extends ActionBarActivity
             case R.id.action_exit:
                 finish();
                 return true;
-            case R.id.action_settings:
-                return true;
-            case R.id.start_on_boot:
-                if (item.isChecked())
-                {
-                    item.setChecked(false);
-                    SharedPreferences.Editor editor = sharedPref.edit();
-                    editor.putBoolean("start_at_boot", false);
-                    editor.commit();
-                }
-                else
-                {
-                    item.setChecked(true);
-                    SharedPreferences.Editor editor = sharedPref.edit();
-                    editor.putBoolean("start_at_boot", true);
-                    editor.commit();
-                }
-                return true;
             default:
                 return super.onOptionsItemSelected(item);
         }
     }
+
     @Override
     public void onDestroy()
     {
-        Log.v("cluster","fuck");
+        Log.v("cluster", "fuck");
         super.onDestroy();
         notificationManger.cancel(01);
         SharedPreferences.Editor editor = sharedPref.edit();
@@ -415,10 +438,12 @@ public class MainActivity extends ActionBarActivity
         tx1 = tx1 / (1024);
 
         editor.putLong("rx1", rx1);
-        editor.putLong("tx1",tx1);
+        editor.putLong("tx1", tx1);
         editor.commit();
         Log.v("rx1", String.valueOf(rx1));
         Intent serviceIntent = new Intent(this, service.class);
         startService(serviceIntent);
     }
+
+
 }

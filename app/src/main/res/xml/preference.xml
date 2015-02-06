@@ -1,0 +1,13 @@
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
+    <PreferenceCategory
+        android:title="Settings">
+    <CheckBoxPreference
+        android:key="start_at_boot"
+        android:title="Start on Boot"
+        android:defaultValue="false"/>
+    <CheckBoxPreference
+        android:key="not_pers"
+        android:title="Show Persistent Notification"
+        android:defaultValue="false"/>
+</PreferenceCategory>
+</PreferenceScreen>
