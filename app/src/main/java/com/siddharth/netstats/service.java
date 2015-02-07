@@ -27,7 +27,9 @@ public class service extends Service
     Notification.Builder builder;
     SQLiteDatabase db;
     Handler h = new Handler();
-    static long speed_rx, speed_tx, rx, tx;
+    static long speed_rx, speed_tx, rx, tx, temp_rx, temp_tx;
+    SharedPreferences prefs;
+    SharedPreferences.Editor editor;
 
     @Override
     public IBinder onBind(Intent intent)
@@ -39,17 +41,19 @@ public class service extends Service
     {
         //cutting all links
         db.close();
-        notificationManger.cancel(01);
+        notificationManger.cancel(1);
         h.removeCallbacksAndMessages(null);
     }
 
     @Override
     public void onStart(Intent intent, int startid)
     {
-        SharedPreferences prefs = getApplicationContext().getSharedPreferences("setting", Context.MODE_PRIVATE);
-        SharedPreferences.Editor editor = prefs.edit();
+        prefs = getApplicationContext().getSharedPreferences("setting", Context.MODE_PRIVATE);
+        editor = prefs.edit();
 
         boolean boot, app, dnd;
+        if (!prefs.contains("noti_visible_serv"))
+            editor.putBoolean("noti_visible_serv", false);
         if (!prefs.contains("start_at_boot"))
             editor.putBoolean("start_at_boot", false);
         if (!prefs.contains("dnd"))
@@ -66,7 +70,7 @@ public class service extends Service
         Log.v("Date", "lklkl");
 
         //only start app if start on boot is enabled
-        if (boot == true && app == false && dnd == false)
+        if (boot && !app && !dnd)
         {
             Intent intents = new Intent(getBaseContext(), MainActivity.class);
             intents.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
@@ -74,37 +78,40 @@ public class service extends Service
         }
 
         //checking if app has quit and monitoring is required
-        if (dnd == true)
+        if (dnd)
         {
             Time now = new Time();
             now.setToNow();
             date = new SimpleDateFormat("yyyy-MM-dd").format(new Date());
-            db = openOrCreateDatabase("database", Context.MODE_PRIVATE, null);
-            db.execSQL("CREATE TABLE IF NOT EXISTS transfer_week('date' VARCHAR NOT NULL UNIQUE,'down_transfer' integer,'up_transfer' integer);");
             Log.v("Date", date);
-            speed_rx = TrafficStats.getTotalRxBytes();
-            speed_rx = speed_rx / (1024);
-            speed_tx = TrafficStats.getTotalTxBytes();
-            speed_tx = speed_tx / (1024);
 
             //building the notification
             Intent notificationIntent = new Intent(this, MainActivity.class);
             notificationIntent.setFlags(Intent.FLAG_ACTIVITY_BROUGHT_TO_FRONT);
-            PendingIntent pendingIntent = PendingIntent.getActivity(this,0,notificationIntent,PendingIntent.FLAG_UPDATE_CURRENT);
+            PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, notificationIntent, PendingIntent.FLAG_UPDATE_CURRENT);
             builder = new Notification.Builder(getApplicationContext());
             builder.setContentTitle("NetStats (Service)");
             builder.setContentText("Down : 0 KBPS         " + "Up : 0 KBPS");
             builder.setSmallIcon(R.drawable.no);
             builder.setAutoCancel(true);
             builder.setPriority(0);
-            builder.setOngoing(true);
+            Intent intent2 = new Intent(this, notification.class);
+            PendingIntent pendintIntent = PendingIntent.getBroadcast(this, 0, intent2, 0);
+            builder.setDeleteIntent(pendintIntent);
+            if (prefs.getBoolean("not_pers", false))
+                builder.setOngoing(true);
             builder.setContentIntent(pendingIntent);
 
             notification = builder.build();
 
             notificationManger = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
-            notificationManger.notify(01, notification);
+            notificationManger.notify(1, notification);
+            editor.putBoolean("noti_visible_serv", true);
 
+            temp_rx = TrafficStats.getTotalRxBytes();
+            temp_rx = temp_rx / (1024);
+            temp_tx = TrafficStats.getTotalTxBytes();
+            temp_tx = temp_tx / (1024);
             System.gc();
             h.postDelayed(runnable, 1000);
         }
@@ -115,6 +122,9 @@ public class service extends Service
         @Override
         public void run()
         {
+            db = openOrCreateDatabase("database", Context.MODE_PRIVATE, null);
+            db.execSQL("CREATE TABLE IF NOT EXISTS transfer_week('date' VARCHAR NOT NULL UNIQUE,'down_transfer' integer,'up_transfer' integer);");
+
             Log.v("run", "ning");
 
             //getting current stats
@@ -122,10 +132,14 @@ public class service extends Service
             rx = rx / (1024);
             tx = TrafficStats.getTotalTxBytes();
             tx = tx / (1024);
-            rx = rx - speed_rx;
-            tx = tx - speed_tx;
-            speed_rx=speed_rx+rx;
-            speed_tx=speed_tx+tx;
+            speed_rx = rx - temp_rx;
+            speed_tx = tx - temp_tx;
+            temp_tx=tx;temp_rx=rx;
+
+            //updating daily values
+            editor.putLong("d_today", prefs.getLong("d_today", 0) + speed_rx);
+            editor.putLong("u_today", prefs.getLong("u_today", 0) + speed_tx);
+            editor.commit();
 
             //checking for gc
             if (counter == 60)
@@ -142,19 +156,15 @@ public class service extends Service
             String temp = new SimpleDateFormat("yyyy-MM-dd").format(new Date());
             if (temp.compareTo(date) != 0)
             {
-                SharedPreferences prefs = getApplicationContext().getSharedPreferences("setting", Context.MODE_PRIVATE);
-                SharedPreferences.Editor editor = prefs.edit();
+                prefs = getApplicationContext().getSharedPreferences("setting", Context.MODE_PRIVATE);
+                editor = prefs.edit();
 
                 Log.v("change", "date");
 
-                long rx1 = prefs.getLong("rx1", 0);
-                long tx1 = prefs.getLong("tx1", 0);
-                rx1 = rx - rx1;
-                tx1 = tx - tx1;
-                db.execSQL("update transfer_week set down_transfer=down_transfer+" + rx1 + " , up_transfer=up_transfer+" + tx1 + " where date = '" + date + "';");
+                db.execSQL("update transfer_week set down_transfer=" + prefs.getLong("d_today", 0) + " , up_transfer=" + prefs.getLong("u_today", 0) + " where date = '" + date + "';");
 
-                editor.putLong("rx1", rx);
-                editor.putLong("tx1", tx);
+                editor.putLong("d_today", 0);
+                editor.putLong("u_today", 0);
                 editor.commit();
                 date = temp;
 
@@ -163,9 +173,23 @@ public class service extends Service
             }
 
             //updating the notification
-            builder.setContentText("Down : " + rx + " KBPS         " + "Up : " + tx + " KBPS");
-            notificationManger.notify(01, builder.build());
 
+            if (!prefs.getBoolean("not_pers", false))
+                builder.setOngoing(false);
+            else
+            {
+                builder.setOngoing(true);
+                editor.putBoolean("noti_visible_serv", true);
+                editor.commit();
+            }
+
+            if (prefs.getBoolean("noti_visible_serv", false))
+            {
+                builder.setContentText("Down : " + speed_rx + " KBPS         " + "Up : " + speed_tx + " KBPS");
+                notificationManger.notify(1, builder.build());
+            }
+
+            db.close();
             h.postDelayed(this, 1000);
         }
     };

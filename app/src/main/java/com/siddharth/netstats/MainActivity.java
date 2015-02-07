@@ -85,10 +85,10 @@ public class MainActivity extends ActionBarActivity
 
         editor.commit();
 
-        d_offset = sharedPref.getLong("rx1", 0);
-        u_offset = sharedPref.getLong("tx1", 0);
-        editor.putLong("rx1", 0);
-        editor.putLong("tx1", 0);
+        d_offset = sharedPref.getLong("d_today", 0);
+        u_offset = sharedPref.getLong("u_today", 0);
+        editor.putLong("d_today", 0);
+        editor.putLong("u_today", 0);
         editor.commit();
 
         stopService(new Intent(this, service.class));
@@ -109,7 +109,7 @@ public class MainActivity extends ActionBarActivity
         mDrawerLayout = (DrawerLayout) findViewById(R.id.drawer_layout);
         mDrawerLayout.setDrawerShadow(R.drawable.drawer_shadow, GravityCompat.START);
         mDrawerList = (ListView) findViewById(R.id.left_drawer);
-        mDrawerList.setAdapter(new ArrayAdapter<String>(this, R.layout.nav_menu, mDrawerItems));
+        mDrawerList.setAdapter(new ArrayAdapter<>(this, R.layout.nav_menu, mDrawerItems));
 
         //drawer click event
         mDrawerList.setOnItemClickListener(new OnItemClickListener()
@@ -225,7 +225,7 @@ public class MainActivity extends ActionBarActivity
         builder.setContentIntent(pendingIntent);
         notification = builder.build();
         notificationManger = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
-        notificationManger.notify(01, notification);
+        notificationManger.notify(1, notification);
         editor.putBoolean("noti_visible", true);
         editor.commit();
 
@@ -247,13 +247,13 @@ public class MainActivity extends ActionBarActivity
 
 
         //charting
-        ArrayList<String> xVals = new ArrayList<String>();
+        ArrayList<String> xVals = new ArrayList<>();
         int count = 7;
         for (int i = 0; i < count; i++)
         {
             xVals.add("" + i);
         }
-        ArrayList<BarEntry> yVals1 = new ArrayList<BarEntry>();
+        ArrayList<BarEntry> yVals1 = new ArrayList<>();
         c.moveToFirst();
         int i = 0;
         while (i < c.getCount())
@@ -267,7 +267,7 @@ public class MainActivity extends ActionBarActivity
 
         set1.setColor(ColorTemplate.getHoloBlue());
         set1.setBarSpacePercent(35f);
-        ArrayList<BarDataSet> dataSets = new ArrayList<BarDataSet>();
+        ArrayList<BarDataSet> dataSets = new ArrayList<>();
         dataSets.add(set1);
 
         frag2.go(xVals, dataSets);
@@ -298,7 +298,7 @@ public class MainActivity extends ActionBarActivity
         public void run()
         {
             //intialize fragment at startup
-            if (first_time == true)
+            if (first_time)
             {
                 Cursor c = db.rawQuery("select down_transfer,up_transfer from transfer_week where date=\"" + date + "\";", null);
                 if (c.getCount() != 0)
@@ -322,7 +322,7 @@ public class MainActivity extends ActionBarActivity
             try
             {
                 //get and set current stats
-                if (cfrag1_is_enabled == true && frag != null)
+                if (cfrag1_is_enabled && frag != null)
                     frag.go(temp1, temp2, temp3, temp4, temp5, temp6);
                 rx1 = TrafficStats.getTotalRxBytes();
                 rx1 = rx1 / (1024);
@@ -370,7 +370,7 @@ public class MainActivity extends ActionBarActivity
                 if (sharedPref.getBoolean("noti_visible", false))
                 {
                     builder.setContentText("Down : " + down_speed + " KBPS         " + "Up : " + up_speed + " KBPS");
-                    notificationManger.notify(01, builder.build());
+                    notificationManger.notify(1, builder.build());
                 }
 
                 handler.postDelayed(this, 1000);
@@ -388,7 +388,6 @@ public class MainActivity extends ActionBarActivity
         // Inflate the menu items for use in the action bar
         MenuInflater inflater = getMenuInflater();
         inflater.inflate(R.menu.menu_main, menu);
-        SharedPreferences prefs = getApplicationContext().getSharedPreferences("setting", Context.MODE_PRIVATE);
         return super.onCreateOptionsMenu(menu);
 
     }
@@ -428,19 +427,14 @@ public class MainActivity extends ActionBarActivity
     {
         Log.v("cluster", "fuck");
         super.onDestroy();
-        notificationManger.cancel(01);
+        notificationManger.cancel(1);
         SharedPreferences.Editor editor = sharedPref.edit();
         editor.putBoolean("dnd", true);
 
-        rx1 = TrafficStats.getTotalRxBytes();
-        rx1 = rx1 / (1024);
-        tx1 = TrafficStats.getTotalTxBytes();
-        tx1 = tx1 / (1024);
-
-        editor.putLong("rx1", rx1);
-        editor.putLong("tx1", tx1);
+        editor.putLong("d_today", d_offset);
+        editor.putLong("u_today", u_offset);
         editor.commit();
-        Log.v("rx1", String.valueOf(rx1));
+        Log.v("d_today", String.valueOf(rx1));
         Intent serviceIntent = new Intent(this, service.class);
         startService(serviceIntent);
     }
