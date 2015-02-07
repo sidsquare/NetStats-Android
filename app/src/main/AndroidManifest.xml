@@ -33,6 +33,12 @@
 
         </activity>
         <activity
+            android:name=".cfrag3"
+            android:label="@string/app_name" >
+            android:parentActivityName=".MainActivity">
+
+        </activity>
+        <activity
             android:name=".preference"
             android:label="@string/app_name" >
             android:parentActivityName=".MainActivity">

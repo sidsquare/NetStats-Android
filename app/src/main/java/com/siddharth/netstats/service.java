@@ -67,7 +67,6 @@ public class service extends Service
         app = prefs.getBoolean("is_app_open", true);
 
 
-        Log.v("Date", "lklkl");
 
         //only start app if start on boot is enabled
         if (boot && !app && !dnd)
@@ -83,7 +82,6 @@ public class service extends Service
             Time now = new Time();
             now.setToNow();
             date = new SimpleDateFormat("yyyy-MM-dd").format(new Date());
-            Log.v("Date", date);
 
             //building the notification
             Intent notificationIntent = new Intent(this, MainActivity.class);

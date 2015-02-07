@@ -48,6 +48,7 @@ public class MainActivity extends ActionBarActivity
     private long rx, tx, temp_rx, temp_tx, d_offset = 0, u_offset = 0, rx1, tx1;
     cfrag1 frag;
     cfrag2 frag2;
+    cfrag3 frag3;
     preference prefe;
     SQLiteDatabase db;
     SharedPreferences sharedPref;
@@ -105,7 +106,7 @@ public class MainActivity extends ActionBarActivity
         frag = (cfrag1) getFragmentManager().findFragmentByTag("cfrag1");
 
         //initialize the left drawer
-        mDrawerItems = new String[]{"Data", "Charts", "Settings"};
+        mDrawerItems = new String[]{"Data", "Weekly Chart","Hourly Chart", "Settings"};
         mDrawerLayout = (DrawerLayout) findViewById(R.id.drawer_layout);
         mDrawerLayout.setDrawerShadow(R.drawable.drawer_shadow, GravityCompat.START);
         mDrawerList = (ListView) findViewById(R.id.left_drawer);
@@ -118,58 +119,72 @@ public class MainActivity extends ActionBarActivity
             public void onItemClick(AdapterView<?> arg0, View v, int position, long id)
             {
                 mDrawerLayout.closeDrawers();
-                if (position == 0)
+                switch (position)
                 {
-                    //switch fragments
-                    cfrag1 newFragment = new cfrag1();
-                    FragmentTransaction ft = getFragmentManager().beginTransaction();
-                    ft.replace(R.id.content_frame, newFragment, "cfrag1");
-                    //ft.addToBackStack("cfrag1");
-                    ft.commit();
-                    getFragmentManager().executePendingTransactions();   //fucking important
+                    case 0:
+                        //switch fragments
+                        cfrag1 newFragment = new cfrag1();
+                        FragmentTransaction ft = getFragmentManager().beginTransaction();
+                        ft.replace(R.id.content_frame, newFragment, "cfrag1");
+                        //ft.addToBackStack("cfrag1");
+                        ft.commit();
+                        getFragmentManager().executePendingTransactions();   //fucking important
 
-                    //intialize the view
-                    frag = (cfrag1) getFragmentManager().findFragmentByTag("cfrag1");
-                    if (frag != null)
-                    {
-                        cfrag1_is_enabled = true;
-                        frag.go(temp1, temp2, temp3, temp4, temp5, temp6);
-                    }
-                }
-                else if (position == 1)
-                {
-                    cfrag1_is_enabled = false;
+                        //intialize the view
+                        frag = (cfrag1) getFragmentManager().findFragmentByTag("cfrag1");
+                        if (frag != null)
+                        {
+                            cfrag1_is_enabled = true;
+                            frag.go(temp1, temp2, temp3, temp4, temp5, temp6);
+                        }
+                        break;
+                    case 1:
+                        cfrag1_is_enabled = false;
 
-                    //switch fragments
-                    cfrag2 newFragment = new cfrag2();
-                    FragmentTransaction ft = getFragmentManager().beginTransaction();
-                    ft.replace(R.id.content_frame, newFragment, "cfrag2");
-                    //ft.addToBackStack("cfrag1");
-                    ft.commit();
-                    getFragmentManager().executePendingTransactions();   //fucking important
+                        //switch fragments
+                        cfrag2 newFragment1 = new cfrag2();
+                        ft = getFragmentManager().beginTransaction();
+                        ft.replace(R.id.content_frame, newFragment1, "cfrag2");
+                        ft.commit();
+                        getFragmentManager().executePendingTransactions();   //fucking important
 
-                    //intialize the view
-                    frag2 = (cfrag2) getFragmentManager().findFragmentByTag("cfrag2");
-                    if (frag != null)
-                    {
-                        setdata();
-                    }
-                }
-                else
-                {
-                    cfrag1_is_enabled = false;
+                        //intialize the view
+                        frag2 = (cfrag2) getFragmentManager().findFragmentByTag("cfrag2");
+                        if (frag != null)
+                        {
+                            setdata();
+                        }
+                        break;
+                    case 2:
+                        cfrag1_is_enabled = false;
 
-                    //switch fragments
-                    preference newFragment = new preference();
-                    FragmentTransaction ft = getFragmentManager().beginTransaction();
-                    ft.replace(R.id.content_frame, newFragment, "prefe");
-                    //ft.addToBackStack("cfrag1");
-                    ft.commit();
-                    getFragmentManager().executePendingTransactions();   //fucking important
+                        //switch fragments
+                        cfrag3 newFragment3 = new cfrag3();
+                        ft = getFragmentManager().beginTransaction();
+                        ft.replace(R.id.content_frame, newFragment3, "cfrag3");
+                        ft.commit();
+                        getFragmentManager().executePendingTransactions();   //fucking important
 
-                    //intialize the view
-                    prefe = (preference) getFragmentManager().findFragmentByTag("prefe");
+                        //intialize the view
+                        frag3 = (cfrag3) getFragmentManager().findFragmentByTag("cfrag3");
+                        if (frag != null)
+                        {
+                            setdata2();
+                        }
+                        break;
+                    case 3:
+                        cfrag1_is_enabled = false;
 
+                        //switch fragments
+                        preference newFragment2 = new preference();
+                        ft = getFragmentManager().beginTransaction();
+                        ft.replace(R.id.content_frame, newFragment2, "prefe");
+                        ft.commit();
+                        getFragmentManager().executePendingTransactions();   //fucking important
+
+                        //intialize the view
+                        prefe = (preference) getFragmentManager().findFragmentByTag("prefe");
+                        break;
                 }
             }
         });
@@ -233,6 +248,51 @@ public class MainActivity extends ActionBarActivity
         prog();
     }
 
+    private void setdata2()
+    {
+        db = openOrCreateDatabase("database", Context.MODE_PRIVATE, null);
+        Cursor c = db.rawQuery("select hour,down,up from transfer_hour order by hour asc;", null);
+        int count = 24;
+        //charting
+        ArrayList<String> xVals = new ArrayList<>();
+        for (int i = 0; i < count; i++)
+        {
+            xVals.add("" + i);
+        }
+        ArrayList<BarEntry> yVals1 = new ArrayList<>();
+        c.moveToFirst();
+        int i = 1,u=0;
+        while (i<24)
+        {
+            //Log.v(String.valueOf(c.getInt(0)),String.valueOf(i));
+            if(c.getCount()!=u)
+            {
+                if (c.getInt(0) == i)
+                {
+                     yVals1.add(new BarEntry(new float[] {(float) c.getInt(1) / 1024,(float) c.getInt(2) / 1024},i));
+                    c.moveToNext();
+                    u++;
+                }
+                else
+                    yVals1.add(new BarEntry((float) 0, i));
+            }
+            else
+                yVals1.add(new BarEntry((float) 0, i));
+            i++;
+        }
+
+        BarDataSet set1 = new BarDataSet(yVals1, "Data Usage in MB");
+
+
+        set1.setBarSpacePercent(35f);
+        set1.setColors(ColorTemplate.VORDIPLOM_COLORS);
+        set1.setStackLabels(new String[] {"Download", "Upload"});
+        ArrayList<BarDataSet> dataSets = new ArrayList<>();
+        dataSets.add(set1);
+
+        frag3.go(xVals, dataSets);
+    }
+
     @Override
     public void onConfigurationChanged(Configuration newConfig)
     {
@@ -274,16 +334,15 @@ public class MainActivity extends ActionBarActivity
     }
 
 
-
     private void prog()
     {
         //open the database
         db = openOrCreateDatabase("database", Context.MODE_PRIVATE, null);
         db.execSQL("CREATE TABLE IF NOT EXISTS transfer_week('date' VARCHAR NOT NULL UNIQUE,'down_transfer' integer,'up_transfer' integer);");
+        db.execSQL("create table if not exists transfer_hour('hour' integer not null unique,'down' integer,'up' integer);");
 
         //get today's date and create entry
         Time now = new Time();
-        now.setToNow();
         date = new SimpleDateFormat("yyyy-MM-dd").format(new Date());
         Cursor c = db.rawQuery("select * from transfer_week where date=\"" + date + "\";", null);
         if (c.getCount() == 0)
@@ -328,7 +387,6 @@ public class MainActivity extends ActionBarActivity
                 rx1 = rx1 / (1024);
                 tx1 = TrafficStats.getTotalTxBytes();
                 tx1 = tx1 / (1024);
-                Log.v("rx1", String.valueOf(rx1));
                 long down_speed = rx1 - temp_rx, up_speed = tx1 - temp_tx, down_data = rx1 - rx, up_data = tx1 - tx;
                 d_offset += down_speed;
                 u_offset += up_speed;
@@ -349,6 +407,7 @@ public class MainActivity extends ActionBarActivity
                 Time now = new Time();
                 now.setToNow();
                 String temp = new SimpleDateFormat("yyyy-MM-dd").format(new Date());
+                int temp2= now.hour;
                 if (temp.compareTo(date) != 0)
                 {
                     date = temp;
@@ -357,6 +416,10 @@ public class MainActivity extends ActionBarActivity
                 }
 
                 db.execSQL("update transfer_week set down_transfer=down_transfer+" + down_speed + " , up_transfer=up_transfer+" + up_speed + " where date = '" + date + "';");
+                Cursor c = db.rawQuery("select * from transfer_hour where hour=\"" + String.valueOf(temp2) + "\";", null);
+                if (c.getCount() == 0)
+                    db.execSQL("insert into transfer_hour values(\"" + String.valueOf(temp2) + "\",0,0);");
+                db.execSQL("update transfer_hour set down=down+"+down_speed+" , up=up+"+up_speed+" where hour = '"+String.valueOf(temp2)+"';");
 
                 if (!sharedPref.getBoolean("not_pers", false))
                     builder.setOngoing(false);
@@ -434,10 +497,7 @@ public class MainActivity extends ActionBarActivity
         editor.putLong("d_today", d_offset);
         editor.putLong("u_today", u_offset);
         editor.commit();
-        Log.v("d_today", String.valueOf(rx1));
         Intent serviceIntent = new Intent(this, service.class);
         startService(serviceIntent);
     }
-
-
 }

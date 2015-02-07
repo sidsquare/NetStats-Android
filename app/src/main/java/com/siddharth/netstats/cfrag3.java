@@ -14,19 +14,19 @@ import com.github.mikephil.charting.utils.YLabels;
 
 import java.util.ArrayList;
 
-
-public class cfrag2 extends Fragment
+/**
+ * Created by Siddharth on 08-02-2015.
+ */
+public class cfrag3 extends Fragment
 {
-
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState)
     {
-        return inflater.inflate(R.layout.cfrag2, container, false);
+        return inflater.inflate(R.layout.cfrag3, container, false);
     }
 
     public void go(ArrayList<String> xVals, ArrayList<BarDataSet> dataSets)
     {
-
         BarChart b = (BarChart) getView().findViewById(R.id.chart);
         b.set3DEnabled(true);
         b.setDrawBarShadow(false);
@@ -34,11 +34,14 @@ public class cfrag2 extends Fragment
         //b.setDrawHorizontalGrid(false);
         b.setDrawVerticalGrid(false);
         b.animateXY(0, 2000);
-        b.setDescription("This Week");
+        b.setDescription("Hourly");
+
+
 
         XLabels xl = b.getXLabels();
         xl.setPosition(XLabels.XLabelPosition.BOTTOM);
-        xl.setTextSize(10f);
+        xl.setTextSize(8f);
+        xl.setSpaceBetweenLabels(0);
 
 
         YLabels yl = b.getYLabels();
