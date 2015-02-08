@@ -8,6 +8,7 @@ import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.net.TrafficStats;
 import android.os.Handler;
@@ -122,6 +123,7 @@ public class service extends Service
         {
             db = openOrCreateDatabase("database", Context.MODE_PRIVATE, null);
             db.execSQL("CREATE TABLE IF NOT EXISTS transfer_week('date' VARCHAR NOT NULL UNIQUE,'down_transfer' integer,'up_transfer' integer);");
+            db.execSQL("create table if not exists transfer_hour('hour' integer not null unique,'down' integer,'up' integer);");
 
             Log.v("run", "ning");
 
@@ -140,7 +142,7 @@ public class service extends Service
             editor.commit();
 
             //checking for gc
-            if (counter == 60)
+            if (counter == 30)
             {
                 System.gc();
                 counter = 0;
@@ -152,6 +154,11 @@ public class service extends Service
             Time now = new Time();
             now.setToNow();
             String temp = new SimpleDateFormat("yyyy-MM-dd").format(new Date());
+            Cursor c = db.rawQuery("select * from transfer_hour where hour=\"" + String.valueOf(now.hour) + "\";", null);
+            if (c.getCount() == 0)
+                db.execSQL("insert into transfer_hour values(\"" + String.valueOf(now.hour) + "\",0,0);");
+            db.execSQL("update transfer_hour set down=down+"+speed_rx+" , up=up+"+speed_tx+" where hour = '"+String.valueOf(now.hour)+"';");
+
             if (temp.compareTo(date) != 0)
             {
                 prefs = getApplicationContext().getSharedPreferences("setting", Context.MODE_PRIVATE);

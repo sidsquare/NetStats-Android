@@ -4,7 +4,6 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.util.Log;
 
 public class notification extends BroadcastReceiver
 {
@@ -19,6 +18,5 @@ public class notification extends BroadcastReceiver
         editor.putBoolean("noti_visible_serv",false);
 
         editor.commit();
-        Log.v("knkn", "646469464    "+prefs.getBoolean("noti_visible",true));
     }
 }

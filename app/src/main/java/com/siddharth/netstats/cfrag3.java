@@ -33,18 +33,20 @@ public class cfrag3 extends Fragment
         b.setDepth((float) 2.1);
         //b.setDrawHorizontalGrid(false);
         b.setDrawVerticalGrid(false);
-        b.animateXY(0, 2000);
-        b.setDescription("Hourly");
+        b.animateXY(1000,1000);
+        b.setDescription("");
 
-
-
+        b.setDrawYLabels(false);
+        
         XLabels xl = b.getXLabels();
         xl.setPosition(XLabels.XLabelPosition.BOTTOM);
         xl.setTextSize(8f);
+        xl.setCenterXLabelText(true);
         xl.setSpaceBetweenLabels(0);
 
 
         YLabels yl = b.getYLabels();
+        yl.mDecimals=1;
         yl.setPosition(YLabels.YLabelPosition.LEFT);
 
 

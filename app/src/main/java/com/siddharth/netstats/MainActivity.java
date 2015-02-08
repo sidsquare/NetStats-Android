@@ -106,7 +106,7 @@ public class MainActivity extends ActionBarActivity
         frag = (cfrag1) getFragmentManager().findFragmentByTag("cfrag1");
 
         //initialize the left drawer
-        mDrawerItems = new String[]{"Data", "Weekly Chart","Hourly Chart", "Settings"};
+        mDrawerItems = new String[]{"Data", "Weekly Chart", "Hourly Chart", "Settings"};
         mDrawerLayout = (DrawerLayout) findViewById(R.id.drawer_layout);
         mDrawerLayout.setDrawerShadow(R.drawable.drawer_shadow, GravityCompat.START);
         mDrawerList = (ListView) findViewById(R.id.left_drawer);
@@ -130,7 +130,7 @@ public class MainActivity extends ActionBarActivity
                         ft.commit();
                         getFragmentManager().executePendingTransactions();   //fucking important
 
-                        //intialize the view
+                        //initialize the view
                         frag = (cfrag1) getFragmentManager().findFragmentByTag("cfrag1");
                         if (frag != null)
                         {
@@ -148,7 +148,7 @@ public class MainActivity extends ActionBarActivity
                         ft.commit();
                         getFragmentManager().executePendingTransactions();   //fucking important
 
-                        //intialize the view
+                        //initialize the view
                         frag2 = (cfrag2) getFragmentManager().findFragmentByTag("cfrag2");
                         if (frag != null)
                         {
@@ -165,7 +165,7 @@ public class MainActivity extends ActionBarActivity
                         ft.commit();
                         getFragmentManager().executePendingTransactions();   //fucking important
 
-                        //intialize the view
+                        //initialize the view
                         frag3 = (cfrag3) getFragmentManager().findFragmentByTag("cfrag3");
                         if (frag != null)
                         {
@@ -182,7 +182,7 @@ public class MainActivity extends ActionBarActivity
                         ft.commit();
                         getFragmentManager().executePendingTransactions();   //fucking important
 
-                        //intialize the view
+                        //initialize the view
                         prefe = (preference) getFragmentManager().findFragmentByTag("prefe");
                         break;
                 }
@@ -251,7 +251,7 @@ public class MainActivity extends ActionBarActivity
     private void setdata2()
     {
         db = openOrCreateDatabase("database", Context.MODE_PRIVATE, null);
-        Cursor c = db.rawQuery("select hour,down,up from transfer_hour order by hour asc;", null);
+        Cursor c = db.rawQuery("select hour,down,up from transfer_hour order by CAST(hour AS INTEGER);", null);
         int count = 24;
         //charting
         ArrayList<String> xVals = new ArrayList<>();
@@ -261,20 +261,20 @@ public class MainActivity extends ActionBarActivity
         }
         ArrayList<BarEntry> yVals1 = new ArrayList<>();
         c.moveToFirst();
-        int i = 1,u=0;
-        while (i<24)
+        int i = 0, u = 0;
+        while (i < 24)
         {
-            //Log.v(String.valueOf(c.getInt(0)),String.valueOf(i));
-            if(c.getCount()!=u)
-            {
+            if (c.getCount() != u)
+            {//Log.v(String.valueOf(c.getInt(0)),String.valueOf(i));
+
                 if (c.getInt(0) == i)
                 {
-                     yVals1.add(new BarEntry(new float[] {(float) c.getInt(1) / 1024,(float) c.getInt(2) / 1024},i));
+                    yVals1.add(new BarEntry(new float[]{(float) c.getInt(1) / 1024, (float) c.getInt(2) / 1024}, i));
                     c.moveToNext();
                     u++;
                 }
                 else
-                    yVals1.add(new BarEntry((float) 0, i));
+                    yVals1.add(new BarEntry(new float[]{0, 0}, i));
             }
             else
                 yVals1.add(new BarEntry((float) 0, i));
@@ -284,9 +284,9 @@ public class MainActivity extends ActionBarActivity
         BarDataSet set1 = new BarDataSet(yVals1, "Data Usage in MB");
 
 
-        set1.setBarSpacePercent(35f);
+        set1.setBarSpacePercent(0);
         set1.setColors(ColorTemplate.VORDIPLOM_COLORS);
-        set1.setStackLabels(new String[] {"Download", "Upload"});
+        set1.setStackLabels(new String[]{"Download", "Upload"});
         ArrayList<BarDataSet> dataSets = new ArrayList<>();
         dataSets.add(set1);
 
@@ -407,7 +407,7 @@ public class MainActivity extends ActionBarActivity
                 Time now = new Time();
                 now.setToNow();
                 String temp = new SimpleDateFormat("yyyy-MM-dd").format(new Date());
-                int temp2= now.hour;
+                int temp2 = now.hour;
                 if (temp.compareTo(date) != 0)
                 {
                     date = temp;
@@ -419,7 +419,7 @@ public class MainActivity extends ActionBarActivity
                 Cursor c = db.rawQuery("select * from transfer_hour where hour=\"" + String.valueOf(temp2) + "\";", null);
                 if (c.getCount() == 0)
                     db.execSQL("insert into transfer_hour values(\"" + String.valueOf(temp2) + "\",0,0);");
-                db.execSQL("update transfer_hour set down=down+"+down_speed+" , up=up+"+up_speed+" where hour = '"+String.valueOf(temp2)+"';");
+                db.execSQL("update transfer_hour set down=down+" + down_speed + " , up=up+" + up_speed + " where hour = '" + String.valueOf(temp2) + "';");
 
                 if (!sharedPref.getBoolean("not_pers", false))
                     builder.setOngoing(false);

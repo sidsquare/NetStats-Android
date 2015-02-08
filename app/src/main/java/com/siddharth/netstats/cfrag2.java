@@ -33,12 +33,13 @@ public class cfrag2 extends Fragment
         b.setDepth((float) 2.1);
         //b.setDrawHorizontalGrid(false);
         b.setDrawVerticalGrid(false);
-        b.animateXY(0, 2000);
+        b.animateXY(1000,1000);
         b.setDescription("This Week");
 
         XLabels xl = b.getXLabels();
         xl.setPosition(XLabels.XLabelPosition.BOTTOM);
         xl.setTextSize(10f);
+        xl.setCenterXLabelText(true);
 
 
         YLabels yl = b.getYLabels();
