@@ -7,6 +7,8 @@ import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.pm.ApplicationInfo;
+import android.content.pm.PackageManager;
 import android.content.res.Configuration;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
@@ -32,11 +34,15 @@ import android.widget.ListView;
 
 import com.github.mikephil.charting.data.BarDataSet;
 import com.github.mikephil.charting.data.BarEntry;
+import com.github.mikephil.charting.data.Entry;
+import com.github.mikephil.charting.data.PieDataSet;
 import com.github.mikephil.charting.utils.ColorTemplate;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.Date;
+import java.util.List;
 
 
 public class MainActivity extends ActionBarActivity
@@ -49,6 +55,7 @@ public class MainActivity extends ActionBarActivity
     cfrag1 frag;
     cfrag2 frag2;
     cfrag3 frag3;
+    cfrag4 frag4;
     preference prefe;
     SQLiteDatabase db;
     SharedPreferences sharedPref;
@@ -106,7 +113,7 @@ public class MainActivity extends ActionBarActivity
         frag = (cfrag1) getFragmentManager().findFragmentByTag("cfrag1");
 
         //initialize the left drawer
-        mDrawerItems = new String[]{"Data", "Weekly Chart", "Hourly Chart", "Settings"};
+        mDrawerItems = new String[]{"Data", "Weekly Chart", "Hourly Chart","App Chart", "Settings"};
         mDrawerLayout = (DrawerLayout) findViewById(R.id.drawer_layout);
         mDrawerLayout.setDrawerShadow(R.drawable.drawer_shadow, GravityCompat.START);
         mDrawerList = (ListView) findViewById(R.id.left_drawer);
@@ -176,6 +183,23 @@ public class MainActivity extends ActionBarActivity
                         cfrag1_is_enabled = false;
 
                         //switch fragments
+                        cfrag4 newFragment4 = new cfrag4();
+                        ft = getFragmentManager().beginTransaction();
+                        ft.replace(R.id.content_frame, newFragment4, "cfrag4");
+                        ft.commit();
+                        getFragmentManager().executePendingTransactions();   //fucking important
+
+                        //initialize the view
+                        frag4 = (cfrag4) getFragmentManager().findFragmentByTag("cfrag4");
+                        if (frag != null)
+                        {
+                            setdata3();
+                        }
+                        break;
+                    case 4:
+                        cfrag1_is_enabled = false;
+
+                        //switch fragments
                         preference newFragment2 = new preference();
                         ft = getFragmentManager().beginTransaction();
                         ft.replace(R.id.content_frame, newFragment2, "prefe");
@@ -185,6 +209,7 @@ public class MainActivity extends ActionBarActivity
                         //initialize the view
                         prefe = (preference) getFragmentManager().findFragmentByTag("prefe");
                         break;
+
                 }
             }
         });
@@ -246,6 +271,69 @@ public class MainActivity extends ActionBarActivity
 
         //call main function
         prog();
+    }
+    public class MyIntComparable implements Comparator<Integer>
+    {
+
+        @Override
+        public int compare(Integer o1, Integer o2) {
+            return (o1>o2 ? -1 : (o1==o2 ? 0 : 1));
+        }
+    }
+    private void setdata3()
+    {
+        ArrayList<String> xVals = new ArrayList<>();
+        ArrayList<Entry> yVals1 = new ArrayList<>();
+        final PackageManager pm = getPackageManager();
+        List<ApplicationInfo> packages = pm.getInstalledApplications(PackageManager.GET_META_DATA);
+        int uid,count=0;long uid_rx;
+        for (ApplicationInfo packageInfo : packages)
+        {
+            String name = "";
+            uid = packageInfo.uid;
+            uid_rx = TrafficStats.getUidRxBytes(uid) / (1024 * 1024);
+            if (uid_rx > 10)
+            {
+                ApplicationInfo app;
+                try
+                {
+                    app = pm.getApplicationInfo(packageInfo.packageName, 0);
+                    name = String.valueOf(pm.getApplicationLabel(app));
+                }
+                catch (PackageManager.NameNotFoundException e)
+                {
+
+                }
+                yVals1.add(new Entry((float) uid_rx, count));
+                xVals.add(name);
+                count++;
+            }
+        }
+        PieDataSet set1 = new PieDataSet(yVals1, "");
+        set1.setSliceSpace(3f);
+
+
+        ArrayList<Integer> colors = new ArrayList<Integer>();
+
+        for (int c : ColorTemplate.VORDIPLOM_COLORS)
+            colors.add(c);
+
+        for (int c : ColorTemplate.JOYFUL_COLORS)
+            colors.add(c);
+
+        for (int c : ColorTemplate.COLORFUL_COLORS)
+            colors.add(c);
+
+        for (int c : ColorTemplate.LIBERTY_COLORS)
+            colors.add(c);
+
+        for (int c : ColorTemplate.PASTEL_COLORS)
+            colors.add(c);
+
+        colors.add(ColorTemplate.getHoloBlue());
+
+        set1.setColors(colors);
+        frag4.go(xVals,set1);
     }
 
     private void setdata2()
