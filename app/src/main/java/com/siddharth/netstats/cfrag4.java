@@ -10,9 +10,9 @@ import android.view.ViewGroup;
 import com.github.mikephil.charting.charts.PieChart;
 import com.github.mikephil.charting.data.PieData;
 import com.github.mikephil.charting.data.PieDataSet;
+import com.github.mikephil.charting.utils.Legend;
 
 import java.util.ArrayList;
-
 
 public class cfrag4 extends Fragment
 {
@@ -25,15 +25,24 @@ public class cfrag4 extends Fragment
     public void go(ArrayList<String> xVals,PieDataSet dataSets)
     {
         PieChart b = (PieChart) getView().findViewById(R.id.chart);
-        b.animateXY(1000,1000);
+        b.animateXY(1000, 1000);
         b.setDescription("");
-        b.setUnit("MB");
+        b.setUnit(" MB");
         b.setDrawLegend(true);
-
+        b.setDrawXValues(false);
+        b.setDrawCenterText(true);
+        b.setDrawUnitsInChart(true);
         b.setValueTextColor(Color.BLACK);
-
+        b.setValueTextSize(10f);
+        b.setCenterText("Data Usage by App (MB)");
 
         PieData data = new PieData(xVals, dataSets);
         b.setData(data);
+        Legend l = b.getLegend();
+        l.setPosition(Legend.LegendPosition.RIGHT_OF_CHART);
+        l.setXEntrySpace(7f);
+        l.setYEntrySpace(5f);
+        System.gc();
+
     }
 }

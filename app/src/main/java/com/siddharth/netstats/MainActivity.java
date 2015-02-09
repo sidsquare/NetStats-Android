@@ -40,6 +40,7 @@ import com.github.mikephil.charting.utils.ColorTemplate;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
@@ -113,7 +114,7 @@ public class MainActivity extends ActionBarActivity
         frag = (cfrag1) getFragmentManager().findFragmentByTag("cfrag1");
 
         //initialize the left drawer
-        mDrawerItems = new String[]{"Data", "Weekly Chart", "Hourly Chart","App Chart", "Settings"};
+        mDrawerItems = new String[]{"Data", "Weekly Chart", "Hourly Chart", "App Chart", "Settings"};
         mDrawerLayout = (DrawerLayout) findViewById(R.id.drawer_layout);
         mDrawerLayout.setDrawerShadow(R.drawable.drawer_shadow, GravityCompat.START);
         mDrawerList = (ListView) findViewById(R.id.left_drawer);
@@ -272,68 +273,98 @@ public class MainActivity extends ActionBarActivity
         //call main function
         prog();
     }
-    public class MyIntComparable implements Comparator<Integer>
-    {
 
+    class MyClass
+    {
+        Long rx;
+        String package_name;
+        String app;
+    }
+
+    public class MyIntComparable implements Comparator<MyClass>
+    {
         @Override
-        public int compare(Integer o1, Integer o2) {
-            return (o1>o2 ? -1 : (o1==o2 ? 0 : 1));
+        public int compare(MyClass o1, MyClass o2)
+        {
+            return (o1.rx > o2.rx ? -1 : (o1.rx == o2.rx ? 0 : 1));
         }
     }
+
     private void setdata3()
     {
         ArrayList<String> xVals = new ArrayList<>();
         ArrayList<Entry> yVals1 = new ArrayList<>();
         final PackageManager pm = getPackageManager();
         List<ApplicationInfo> packages = pm.getInstalledApplications(PackageManager.GET_META_DATA);
-        int uid,count=0;long uid_rx;
+        int uid;
+        long uid_rx, uid_tx;
+        ArrayList<MyClass> temp_f = new ArrayList<>();
+        ArrayList<Long> temp_uid_tx = new ArrayList<>();
         for (ApplicationInfo packageInfo : packages)
         {
-            String name = "";
+            String packag = "", name = "";
+            packag = packageInfo.packageName;
             uid = packageInfo.uid;
-            uid_rx = TrafficStats.getUidRxBytes(uid) / (1024 * 1024);
-            if (uid_rx > 10)
+            MyClass tempe = new MyClass();
+            try
             {
-                ApplicationInfo app;
-                try
-                {
-                    app = pm.getApplicationInfo(packageInfo.packageName, 0);
-                    name = String.valueOf(pm.getApplicationLabel(app));
-                }
-                catch (PackageManager.NameNotFoundException e)
-                {
 
-                }
-                yVals1.add(new Entry((float) uid_rx, count));
-                xVals.add(name);
-                count++;
+                ApplicationInfo app = pm.getApplicationInfo(packag, 0);
+                name = String.valueOf(pm.getApplicationLabel(app));
             }
+            catch (Exception e)
+            {
+                Log.v("Exception", "ex");
+            }
+            tempe.package_name = packag;
+            tempe.app = name;
+            uid_rx = TrafficStats.getUidRxBytes(uid) / (1024 * 1024);
+            uid_tx = TrafficStats.getUidTxBytes(uid) / (1024 * 1024);
+            Cursor c = db.rawQuery("select * from app where package=\"" + packag + "\";", null);
+            if (c.getCount() == 0)
+            {
+                db.execSQL("insert into app values(\"" + packag + "\",0,0);");
+                tempe.rx = (long) 0 + uid_rx;
+            }
+            else
+            {
+                c.moveToFirst();
+                tempe.rx = Long.valueOf(c.getInt(1)) + uid_rx;
+            }
+            temp_f.add(tempe);
         }
+        Collections.sort(temp_f, new MyIntComparable());
+        for (int x = 0; x < 5; x++)
+        {
+            MyClass ex = temp_f.get(x);
+            xVals.add(ex.app);
+            yVals1.add(new Entry((float) ex.rx, x));
+        }
+
         PieDataSet set1 = new PieDataSet(yVals1, "");
         set1.setSliceSpace(3f);
 
-
         ArrayList<Integer> colors = new ArrayList<Integer>();
 
-        for (int c : ColorTemplate.VORDIPLOM_COLORS)
-            colors.add(c);
+        for (int c1 : ColorTemplate.VORDIPLOM_COLORS)
+            colors.add(c1);
 
-        for (int c : ColorTemplate.JOYFUL_COLORS)
-            colors.add(c);
+        for (int c1 : ColorTemplate.JOYFUL_COLORS)
+            colors.add(c1);
 
-        for (int c : ColorTemplate.COLORFUL_COLORS)
-            colors.add(c);
+        for (int c1 : ColorTemplate.COLORFUL_COLORS)
+            colors.add(c1);
 
-        for (int c : ColorTemplate.LIBERTY_COLORS)
-            colors.add(c);
+        for (int c1 : ColorTemplate.LIBERTY_COLORS)
+            colors.add(c1);
 
-        for (int c : ColorTemplate.PASTEL_COLORS)
-            colors.add(c);
+        for (int c1 : ColorTemplate.PASTEL_COLORS)
+            colors.add(c1);
 
         colors.add(ColorTemplate.getHoloBlue());
 
         set1.setColors(colors);
-        frag4.go(xVals,set1);
+        frag4.go(xVals, set1);
     }
 
     private void setdata2()
