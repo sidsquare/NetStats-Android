@@ -23,13 +23,13 @@ public class service extends Service
 {
     private String date;
     static int counter = 0;
-    Notification notification;
-    NotificationManager notificationManger;
-    Notification.Builder builder;
     SQLiteDatabase db;
     Handler h = new Handler();
     static long speed_rx, speed_tx, rx, tx, temp_rx, temp_tx;
     SharedPreferences prefs;
+    Notification notification, n2;
+    NotificationManager notificationManger, nm2;
+    Notification.Builder builder, builder1;
     SharedPreferences.Editor editor;
 
     @Override
@@ -48,7 +48,8 @@ public class service extends Service
             h.removeCallbacksAndMessages(null);
         }
         catch (NullPointerException e)
-        {}
+        {
+        }
 
     }
 
@@ -67,12 +68,26 @@ public class service extends Service
             editor.putBoolean("dnd", false);
         if (!prefs.contains("is_app_open"))
             editor.putBoolean("is_app_open", true);
+        if (!prefs.contains("cur_month"))
+            editor.putInt("cur_month", 1);
+        if (!prefs.contains("noti_visible"))
+            editor.putBoolean("noti_visible", false);
+        if (!prefs.contains("noti_visible2"))
+            editor.putBoolean("noti_visible2", false);
+        if (!prefs.contains("not_pers"))
+            editor.putBoolean("not_pers", false);
+        if (!prefs.contains("flimit"))
+            editor.putLong("flimit", 0);
+        if (!prefs.contains("limit"))
+            editor.putString("limit", "");
+
+
+        editor.putBoolean("noti_visible2", false);
         editor.commit();
 
         dnd = prefs.getBoolean("dnd", false);
         boot = prefs.getBoolean("start_at_boot", false);
         app = prefs.getBoolean("is_app_open", true);
-
 
 
         //only start app if start on boot is enabled
@@ -140,7 +155,8 @@ public class service extends Service
             tx = tx / (1024);
             speed_rx = rx - temp_rx;
             speed_tx = tx - temp_tx;
-            temp_tx=tx;temp_rx=rx;
+            temp_tx = tx;
+            temp_rx = rx;
 
             //updating daily values
             editor.putLong("d_today", prefs.getLong("d_today", 0) + speed_rx);
@@ -160,10 +176,11 @@ public class service extends Service
             Time now = new Time();
             now.setToNow();
             String temp = new SimpleDateFormat("yyyy-MM-dd").format(new Date());
+            int temp3 = now.month + 1;
             Cursor c = db.rawQuery("select * from transfer_hour where hour=\"" + String.valueOf(now.hour) + "\";", null);
             if (c.getCount() == 0)
                 db.execSQL("insert into transfer_hour values(\"" + String.valueOf(now.hour) + "\",0,0);");
-            db.execSQL("update transfer_hour set down=down+"+speed_rx+" , up=up+"+speed_tx+" where hour = '"+String.valueOf(now.hour)+"';");
+            db.execSQL("update transfer_hour set down=down+" + speed_rx + " , up=up+" + speed_tx + " where hour = '" + String.valueOf(now.hour) + "';");
 
             if (temp.compareTo(date) != 0)
             {
@@ -183,6 +200,34 @@ public class service extends Service
                 counter = 0;
             }
 
+            //limit
+            editor.putLong("flimit", prefs.getLong("flimit", 0) + speed_rx + speed_tx);
+            editor.commit();
+
+            if (prefs.getLong("flimit", 0) >= (Long.parseLong(prefs.getString("limit", "0")) * 1024) && prefs.getBoolean("noti_visible2", false) == false)
+            {
+                builder1 = new Notification.Builder(getApplicationContext());
+                builder1.setContentTitle("Warning");
+                builder1.setContentText("You have reached the Monthly limit");
+                builder1.setSmallIcon(R.drawable.no);
+                builder1.setAutoCancel(true);
+                builder1.setPriority(0);
+                builder1.setOngoing(false);
+                n2 = builder1.build();
+                nm2 = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+                nm2.notify(2, n2);
+                editor.putBoolean("noti_visible2", true);
+            }
+
+            //reseting data used on month change
+            if (temp3 != prefs.getInt("cur_month", 0))
+            {
+                editor.putLong("flimit", 0);
+                editor.putInt("cur_month", temp3);
+                editor.putBoolean("noti_visible2", false);
+                editor.commit();
+                nm2.cancel(2);
+            }
             //updating the notification
 
             if (!prefs.getBoolean("not_pers", false))

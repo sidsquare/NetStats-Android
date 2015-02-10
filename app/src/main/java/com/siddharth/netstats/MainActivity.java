@@ -65,9 +65,9 @@ public class MainActivity extends ActionBarActivity
     private DrawerLayout mDrawerLayout;
     private ListView mDrawerList;
     private ActionBarDrawerToggle mDrawerToggle;
-    Notification notification,n2;
-    NotificationManager notificationManger,nm2;
-    Notification.Builder builder,builder1;
+    Notification notification, n2;
+    NotificationManager notificationManger, nm2;
+    Notification.Builder builder, builder1;
     SharedPreferences.Editor editor;
 
     @Override
@@ -80,6 +80,8 @@ public class MainActivity extends ActionBarActivity
         sharedPref = getSharedPreferences("setting", Context.MODE_PRIVATE);
 
         editor = sharedPref.edit();
+        if (!sharedPref.contains("cur_month"))
+            editor.putInt("cur_month", 1);
         if (!sharedPref.contains("start_at_boot"))
             editor.putBoolean("start_at_boot", false);
         if (!sharedPref.contains("noti_visible"))
@@ -100,11 +102,12 @@ public class MainActivity extends ActionBarActivity
         editor.putBoolean("dnd", false);
 
         editor.commit();
-Log.v(sharedPref.getString("limit",""), String.valueOf(sharedPref.getLong("flimit",0)));
+        Log.v(sharedPref.getString("limit", ""), String.valueOf(sharedPref.getLong("flimit", 0)));
         d_offset = sharedPref.getLong("d_today", 0);
         u_offset = sharedPref.getLong("u_today", 0);
         editor.putLong("d_today", 0);
         editor.putLong("u_today", 0);
+        editor.putBoolean("noti_visible2", false);
         editor.commit();
 
         stopService(new Intent(this, service.class));
@@ -121,7 +124,7 @@ Log.v(sharedPref.getString("limit",""), String.valueOf(sharedPref.getLong("flimi
         frag = (cfrag1) getFragmentManager().findFragmentByTag("cfrag1");
 
         //initialize the left drawer
-        mDrawerItems = new String[]{"Data", "Weekly Chart", "Hourly Chart", "App Chart","App Data Usage", "Settings"};
+        mDrawerItems = new String[]{"Data", "Weekly Chart", "Hourly Chart", "App Chart", "App Data Usage", "Settings"};
         mDrawerLayout = (DrawerLayout) findViewById(R.id.drawer_layout);
         mDrawerLayout.setDrawerShadow(R.drawable.drawer_shadow, GravityCompat.START);
         mDrawerList = (ListView) findViewById(R.id.left_drawer);
@@ -536,8 +539,8 @@ Log.v(sharedPref.getString("limit",""), String.valueOf(sharedPref.getLong("flimi
                 frag.go(temp1, temp2, temp3, temp4, temp5, temp6);
                 first_time = false;
             }
-          //  try
-            //{
+            try
+            {
                 //get and set current stats
                 if (cfrag1_is_enabled && frag != null)
                     frag.go(temp1, temp2, temp3, temp4, temp5, temp6);
@@ -566,6 +569,7 @@ Log.v(sharedPref.getString("limit",""), String.valueOf(sharedPref.getLong("flimi
                 now.setToNow();
                 String temp = new SimpleDateFormat("yyyy-MM-dd").format(new Date());
                 int temp2 = now.hour;
+                int temp3 = now.month + 1;
                 if (temp.compareTo(date) != 0)
                 {
                     date = temp;
@@ -579,9 +583,10 @@ Log.v(sharedPref.getString("limit",""), String.valueOf(sharedPref.getLong("flimi
                 db.execSQL("update transfer_hour set down=down+" + down_speed + " , up=up+" + up_speed + " where hour = '" + String.valueOf(temp2) + "';");
 
                 //limit
-                editor.putLong("flimit",sharedPref.getLong("flimit",0)+down_speed+up_speed);
+                editor.putLong("flimit", sharedPref.getLong("flimit", 0) + down_speed + up_speed);
                 editor.commit();
-                if(sharedPref.getLong("flimit",0)>=Long.parseLong(sharedPref.getString("limit", "0")) &&sharedPref.getBoolean("noti_visible2",false)==false)
+
+                if (sharedPref.getLong("flimit", 0) >= (Long.parseLong(sharedPref.getString("limit", "0")) * 1024) && sharedPref.getBoolean("noti_visible2", false) == false)
                 {
                     builder1 = new Notification.Builder(getApplicationContext());
                     builder1.setContentTitle("Warning");
@@ -590,10 +595,20 @@ Log.v(sharedPref.getString("limit",""), String.valueOf(sharedPref.getLong("flimi
                     builder1.setAutoCancel(true);
                     builder1.setPriority(0);
                     builder1.setOngoing(false);
-                    n2= builder1.build();
+                    n2 = builder1.build();
                     nm2 = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
                     nm2.notify(2, n2);
-                    editor.putBoolean("noti_visible2",true);
+                    editor.putBoolean("noti_visible2", true);
+                }
+
+                //reseting data used on month change
+                if (temp3 != sharedPref.getInt("cur_month", 0))
+                {
+                    editor.putLong("flimit", 0);
+                    editor.putInt("cur_month", temp3);
+                    editor.putBoolean("noti_visible2", false);
+                    editor.commit();
+                    nm2.cancel(2);
                 }
 
                 if (!sharedPref.getBoolean("not_pers", false))
@@ -612,11 +627,11 @@ Log.v(sharedPref.getString("limit",""), String.valueOf(sharedPref.getLong("flimi
                 }
 
                 handler.postDelayed(this, 1000);
-           /* }
+            }
             catch (NullPointerException n)
             {
                 Log.v("piss", "off");
-            }*/
+            }
         }
     };
 
