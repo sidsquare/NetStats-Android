@@ -57,6 +57,7 @@ public class MainActivity extends ActionBarActivity
     cfrag2 frag2;
     cfrag3 frag3;
     cfrag4 frag4;
+    cfrag5 frag5;
     preference prefe;
     SQLiteDatabase db;
     SharedPreferences sharedPref;
@@ -64,10 +65,10 @@ public class MainActivity extends ActionBarActivity
     private DrawerLayout mDrawerLayout;
     private ListView mDrawerList;
     private ActionBarDrawerToggle mDrawerToggle;
-    public Notification notification;
-    public NotificationManager notificationManger;
-    public Notification.Builder builder;
-    public SharedPreferences.Editor editor;
+    Notification notification,n2;
+    NotificationManager notificationManger,nm2;
+    Notification.Builder builder,builder1;
+    SharedPreferences.Editor editor;
 
     @Override
     protected void onCreate(Bundle savedInstanceState)
@@ -83,17 +84,23 @@ public class MainActivity extends ActionBarActivity
             editor.putBoolean("start_at_boot", false);
         if (!sharedPref.contains("noti_visible"))
             editor.putBoolean("noti_visible", false);
+        if (!sharedPref.contains("noti_visible2"))
+            editor.putBoolean("noti_visible2", false);
         if (!sharedPref.contains("not_pers"))
             editor.putBoolean("not_pers", false);
+        if (!sharedPref.contains("flimit"))
+            editor.putLong("flimit", 0);
         if (!sharedPref.contains("is_app_open"))
             editor.putBoolean("is_app_open", true);
+        if (!sharedPref.contains("limit"))
+            editor.putString("limit", "");
         if (!sharedPref.contains("dnd"))
             editor.putBoolean("dnd", false);
         editor.putBoolean("is_app_open", true);
         editor.putBoolean("dnd", false);
 
         editor.commit();
-
+Log.v(sharedPref.getString("limit",""), String.valueOf(sharedPref.getLong("flimit",0)));
         d_offset = sharedPref.getLong("d_today", 0);
         u_offset = sharedPref.getLong("u_today", 0);
         editor.putLong("d_today", 0);
@@ -114,7 +121,7 @@ public class MainActivity extends ActionBarActivity
         frag = (cfrag1) getFragmentManager().findFragmentByTag("cfrag1");
 
         //initialize the left drawer
-        mDrawerItems = new String[]{"Data", "Weekly Chart", "Hourly Chart", "App Chart", "Settings"};
+        mDrawerItems = new String[]{"Data", "Weekly Chart", "Hourly Chart", "App Chart","App Data Usage", "Settings"};
         mDrawerLayout = (DrawerLayout) findViewById(R.id.drawer_layout);
         mDrawerLayout.setDrawerShadow(R.drawable.drawer_shadow, GravityCompat.START);
         mDrawerList = (ListView) findViewById(R.id.left_drawer);
@@ -201,6 +208,23 @@ public class MainActivity extends ActionBarActivity
                         cfrag1_is_enabled = false;
 
                         //switch fragments
+                        cfrag5 newFragment5 = new cfrag5();
+                        ft = getFragmentManager().beginTransaction();
+                        ft.replace(R.id.content_frame, newFragment5, "cfrag5");
+                        ft.commit();
+                        getFragmentManager().executePendingTransactions();   //fucking important
+
+                        //initialize the view
+                        frag5 = (cfrag5) getFragmentManager().findFragmentByTag("cfrag5");
+                        if (frag != null)
+                        {
+                            setdata4();
+                        }
+                        break;
+                    case 5:
+                        cfrag1_is_enabled = false;
+
+                        //switch fragments
                         preference newFragment2 = new preference();
                         ft = getFragmentManager().beginTransaction();
                         ft.replace(R.id.content_frame, newFragment2, "prefe");
@@ -274,6 +298,13 @@ public class MainActivity extends ActionBarActivity
         prog();
     }
 
+    private void setdata4()
+    {
+
+    }
+
+
+    //class for storing app information
     class MyClass
     {
         Long rx;
@@ -281,6 +312,7 @@ public class MainActivity extends ActionBarActivity
         String app;
     }
 
+    //comparion function
     public class MyIntComparable implements Comparator<MyClass>
     {
         @Override
@@ -300,30 +332,33 @@ public class MainActivity extends ActionBarActivity
         long uid_rx, uid_tx;
         ArrayList<MyClass> temp_f = new ArrayList<>();
         ArrayList<Long> temp_uid_tx = new ArrayList<>();
+
+        //cycle through installed apps to get net usage
         for (ApplicationInfo packageInfo : packages)
         {
-            String packag = "", name = "";
-            packag = packageInfo.packageName;
-            uid = packageInfo.uid;
+
             MyClass tempe = new MyClass();
+            //get app uid and package
+            tempe.package_name = packageInfo.packageName;
+            uid = packageInfo.uid;
             try
             {
-
-                ApplicationInfo app = pm.getApplicationInfo(packag, 0);
-                name = String.valueOf(pm.getApplicationLabel(app));
+                //get app name
+                ApplicationInfo app = pm.getApplicationInfo(tempe.package_name, 0);
+                tempe.app = String.valueOf(pm.getApplicationLabel(app));
             }
             catch (Exception e)
             {
                 Log.v("Exception", "ex");
             }
-            tempe.package_name = packag;
-            tempe.app = name;
-            uid_rx = TrafficStats.getUidRxBytes(uid) / (1024 * 1024);
-            uid_tx = TrafficStats.getUidTxBytes(uid) / (1024 * 1024);
-            Cursor c = db.rawQuery("select * from app where package=\"" + packag + "\";", null);
+            //get stats since boot
+            uid_rx = TrafficStats.getUidRxBytes(uid) / (1024);
+            uid_tx = TrafficStats.getUidTxBytes(uid) / (1024);
+            //add stored stats
+            Cursor c = db.rawQuery("select * from app where package=\"" + tempe.package_name + "\";", null);
             if (c.getCount() == 0)
             {
-                db.execSQL("insert into app values(\"" + packag + "\",0,0);");
+                db.execSQL("insert into app values(\"" + tempe.package_name + "\",0,0);");
                 tempe.rx = (long) 0 + uid_rx;
             }
             else
@@ -333,16 +368,18 @@ public class MainActivity extends ActionBarActivity
             }
             temp_f.add(tempe);
         }
+        //sort to get top 5 apps
         Collections.sort(temp_f, new MyIntComparable());
         for (int x = 0; x < 5; x++)
         {
             MyClass ex = temp_f.get(x);
             xVals.add(ex.app);
-            yVals1.add(new Entry((float) ex.rx, x));
+            yVals1.add(new Entry((float) ex.rx / 1024, x));
         }
 
+        //charting
         PieDataSet set1 = new PieDataSet(yVals1, "");
-        set1.setSliceSpace(3f);
+        set1.setSliceSpace(7f);
 
         ArrayList<Integer> colors = new ArrayList<Integer>();
 
@@ -443,7 +480,7 @@ public class MainActivity extends ActionBarActivity
         }
 
         BarDataSet set1 = new BarDataSet(yVals1, "Data Usage in MB");
-
+        set1.setBarSpacePercent(0);
         set1.setColor(ColorTemplate.getHoloBlue());
         set1.setBarSpacePercent(35f);
         ArrayList<BarDataSet> dataSets = new ArrayList<>();
@@ -459,6 +496,7 @@ public class MainActivity extends ActionBarActivity
         db = openOrCreateDatabase("database", Context.MODE_PRIVATE, null);
         db.execSQL("CREATE TABLE IF NOT EXISTS transfer_week('date' VARCHAR NOT NULL UNIQUE,'down_transfer' integer,'up_transfer' integer);");
         db.execSQL("create table if not exists transfer_hour('hour' integer not null unique,'down' integer,'up' integer);");
+        db.execSQL("create table if not exists this_month('package' varchar not null ,'date' varchar not null,'app' varchar,'down' integer,'up' integer);");
 
         //get today's date and create entry
         Time now = new Time();
@@ -476,6 +514,7 @@ public class MainActivity extends ActionBarActivity
         public void run()
         {
             //intialize fragment at startup
+
             if (first_time)
             {
                 Cursor c = db.rawQuery("select down_transfer,up_transfer from transfer_week where date=\"" + date + "\";", null);
@@ -497,8 +536,8 @@ public class MainActivity extends ActionBarActivity
                 frag.go(temp1, temp2, temp3, temp4, temp5, temp6);
                 first_time = false;
             }
-            try
-            {
+          //  try
+            //{
                 //get and set current stats
                 if (cfrag1_is_enabled && frag != null)
                     frag.go(temp1, temp2, temp3, temp4, temp5, temp6);
@@ -533,12 +572,29 @@ public class MainActivity extends ActionBarActivity
                     d_offset = u_offset = 0;
                     db.execSQL("insert into transfer_week values(\"" + temp + "\",0,0);");//changing date back to original --- handle sql exception later
                 }
-
                 db.execSQL("update transfer_week set down_transfer=down_transfer+" + down_speed + " , up_transfer=up_transfer+" + up_speed + " where date = '" + date + "';");
                 Cursor c = db.rawQuery("select * from transfer_hour where hour=\"" + String.valueOf(temp2) + "\";", null);
                 if (c.getCount() == 0)
                     db.execSQL("insert into transfer_hour values(\"" + String.valueOf(temp2) + "\",0,0);");
                 db.execSQL("update transfer_hour set down=down+" + down_speed + " , up=up+" + up_speed + " where hour = '" + String.valueOf(temp2) + "';");
+
+                //limit
+                editor.putLong("flimit",sharedPref.getLong("flimit",0)+down_speed+up_speed);
+                editor.commit();
+                if(sharedPref.getLong("flimit",0)>=Long.parseLong(sharedPref.getString("limit", "0")) &&sharedPref.getBoolean("noti_visible2",false)==false)
+                {
+                    builder1 = new Notification.Builder(getApplicationContext());
+                    builder1.setContentTitle("Warning");
+                    builder1.setContentText("You have reached the Monthly limit");
+                    builder1.setSmallIcon(R.drawable.no);
+                    builder1.setAutoCancel(true);
+                    builder1.setPriority(0);
+                    builder1.setOngoing(false);
+                    n2= builder1.build();
+                    nm2 = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+                    nm2.notify(2, n2);
+                    editor.putBoolean("noti_visible2",true);
+                }
 
                 if (!sharedPref.getBoolean("not_pers", false))
                     builder.setOngoing(false);
@@ -556,11 +612,11 @@ public class MainActivity extends ActionBarActivity
                 }
 
                 handler.postDelayed(this, 1000);
-            }
+           /* }
             catch (NullPointerException n)
             {
                 Log.v("piss", "off");
-            }
+            }*/
         }
     };
 

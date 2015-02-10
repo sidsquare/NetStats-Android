@@ -38,12 +38,13 @@ public class ShutdownService extends Service
             {
                 uid = packageInfo.uid;
                 name = packageInfo.packageName;
-                uid_rx = TrafficStats.getUidRxBytes(uid) / (1024 * 1024);
-                uid_tx = TrafficStats.getUidRxBytes(uid) / (1024 * 1024);
+                uid_rx = TrafficStats.getUidRxBytes(uid) / (1024);
+                uid_tx = TrafficStats.getUidRxBytes(uid) / (1024);
                 Cursor c = db.rawQuery("select * from app where package=\"" + name + "\";", null);
                 if (c.getCount() == 0)
-                    db.execSQL("insert into app values(\"" + name + "\",0,0);");
-                db.execSQL("update app set down=down+" + uid_rx + " , up=up+" + uid_tx + " where package = '" + name + "';");
+                    db.execSQL("insert into app values(\"" + name + "\","+uid_rx+","+uid_tx+");");
+                else
+                    db.execSQL("update app set down=down+" + uid_rx + " , up=up+" + uid_tx + " where package = '" + name + "';");
             }
             catch (Exception e)
             {

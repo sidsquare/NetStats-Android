@@ -9,6 +9,7 @@ import android.view.ViewGroup;
 import com.github.mikephil.charting.charts.BarChart;
 import com.github.mikephil.charting.data.BarData;
 import com.github.mikephil.charting.data.BarDataSet;
+import com.github.mikephil.charting.utils.Legend;
 import com.github.mikephil.charting.utils.XLabels;
 import com.github.mikephil.charting.utils.YLabels;
 
@@ -37,7 +38,8 @@ public class cfrag3 extends Fragment
         b.setDescription("");
 
         b.setDrawYLabels(false);
-        
+
+        b.setDrawLegend(true);
         XLabels xl = b.getXLabels();
         xl.setPosition(XLabels.XLabelPosition.BOTTOM);
         xl.setTextSize(8f);
@@ -52,5 +54,9 @@ public class cfrag3 extends Fragment
 
         BarData data = new BarData(xVals, dataSets);
         b.setData(data);
+        Legend l = b.getLegend();
+        l.setPosition(Legend.LegendPosition.RIGHT_OF_CHART_INSIDE);
+        l.setXEntrySpace(7f);
+        l.setYEntrySpace(5f);
     }
 }

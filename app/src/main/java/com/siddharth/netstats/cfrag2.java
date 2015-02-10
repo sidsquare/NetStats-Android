@@ -9,8 +9,8 @@ import android.view.ViewGroup;
 import com.github.mikephil.charting.charts.BarChart;
 import com.github.mikephil.charting.data.BarData;
 import com.github.mikephil.charting.data.BarDataSet;
+import com.github.mikephil.charting.utils.Legend;
 import com.github.mikephil.charting.utils.XLabels;
-import com.github.mikephil.charting.utils.YLabels;
 
 import java.util.ArrayList;
 
@@ -35,18 +35,23 @@ public class cfrag2 extends Fragment
         b.setDrawVerticalGrid(false);
         b.animateXY(1000,1000);
         b.setDescription("This Week");
+        b.setDrawLegend(true);
 
+        b.setDrawYLabels(false);
         XLabels xl = b.getXLabels();
         xl.setPosition(XLabels.XLabelPosition.BOTTOM);
         xl.setTextSize(10f);
         xl.setCenterXLabelText(true);
+        xl.setSpaceBetweenLabels(0);
 
 
-        YLabels yl = b.getYLabels();
-        yl.setPosition(YLabels.YLabelPosition.LEFT);
 
 
         BarData data = new BarData(xVals, dataSets);
         b.setData(data);
+        Legend l = b.getLegend();
+        l.setPosition(Legend.LegendPosition.RIGHT_OF_CHART_INSIDE);
+        l.setXEntrySpace(7f);
+        l.setYEntrySpace(5f);
     }
 }

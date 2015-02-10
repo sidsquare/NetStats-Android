@@ -40,10 +40,16 @@ public class service extends Service
 
     public void onDestroy()
     {
-        //cutting all links
-        db.close();
-        notificationManger.cancel(1);
-        h.removeCallbacksAndMessages(null);
+        try
+        {
+            //cutting all links
+            db.close();
+            notificationManger.cancel(1);
+            h.removeCallbacksAndMessages(null);
+        }
+        catch (NullPointerException e)
+        {}
+
     }
 
     @Override

@@ -9,5 +9,12 @@
         android:key="not_pers"
         android:title="Show Persistent Notification"
         android:defaultValue="false"/>
-</PreferenceCategory>
+    <EditTextPreference
+            android:key="limit"
+            android:title="Set Monthly Usage Limit"
+            android:summary=""
+            android:dialogTitle="Enter the number in MB"
+            android:numeric="integer"
+    />
+    </PreferenceCategory>
 </PreferenceScreen>
