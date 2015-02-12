@@ -6,6 +6,11 @@
         android:title="Start on Boot"
         android:defaultValue="false"/>
     <CheckBoxPreference
+            android:key="mobile_en"
+            android:title="Only Monitor Mobile Data Transfer"
+            android:defaultValue="false"/>
+
+    <CheckBoxPreference
         android:key="not_pers"
         android:title="Show Persistent Notification"
         android:defaultValue="false"/>
@@ -16,5 +21,9 @@
             android:dialogTitle="Enter the number in MB"
             android:numeric="integer"
     />
+        <CheckBoxPreference
+            android:key="limit_on_wifi"
+            android:title="Apply Data Transfer Limit on WIFI"
+            android:defaultValue="false"/>
     </PreferenceCategory>
 </PreferenceScreen>
