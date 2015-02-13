@@ -25,7 +25,7 @@ public class service extends Service
     static int counter = 0;
     SQLiteDatabase db;
     Handler h = new Handler();
-    static long temp_rx, temp_tx;
+    static long temp_rx, temp_tx, temp_rx_mob, temp_tx_mob;
     SharedPreferences prefs;
     Notification notification, n2;
     NotificationManager notificationManger, nm2;
@@ -127,17 +127,10 @@ public class service extends Service
             notificationManger = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
             notificationManger.notify(1, notification);
             editor.putBoolean("noti_visible_serv", true);
-
-            if (prefs.getBoolean("mobile_en", false) == false)
-            {
-                temp_rx = TrafficStats.getTotalRxBytes();
-                temp_tx = TrafficStats.getTotalTxBytes();
-            }
-            else
-            {
-                temp_rx = TrafficStats.getMobileRxBytes();
-                temp_tx = TrafficStats.getMobileTxBytes();
-            }
+            temp_rx = TrafficStats.getTotalRxBytes();
+            temp_tx = TrafficStats.getTotalTxBytes();
+            temp_rx_mob = TrafficStats.getMobileRxBytes();
+            temp_tx_mob = TrafficStats.getMobileTxBytes();
             temp_rx = temp_rx / (1024);
             temp_tx = temp_tx / (1024);
             db = openOrCreateDatabase("database", Context.MODE_PRIVATE, null);
@@ -161,35 +154,29 @@ public class service extends Service
             Log.v("run", "ning");
 
             //getting current stats
-            long rx, tx;
-            if (mob == false)
-            {
-                rx = TrafficStats.getTotalRxBytes();
-                tx = TrafficStats.getTotalTxBytes();
-            }
-            else
-            {
-                rx = TrafficStats.getMobileRxBytes();
-                tx = TrafficStats.getMobileTxBytes();
-            }
+            long rx, tx, speed_rx, speed_tx, rx_mob, tx_mob, speed_rx_mob, speed_tx_mob;
+            rx = TrafficStats.getTotalRxBytes();
+            tx = TrafficStats.getTotalTxBytes();
             rx = rx / (1024);
             tx = tx / (1024);
-            long speed_rx = rx - temp_rx;
-            long speed_tx = tx - temp_tx;
+            speed_rx = rx - temp_rx;
+            speed_tx = tx - temp_tx;
             temp_tx = tx;
             temp_rx = rx;
+            rx_mob = TrafficStats.getMobileRxBytes();
+            tx_mob = TrafficStats.getMobileTxBytes();
+            rx_mob = rx_mob / (1024);
+            tx_mob = tx_mob / (1024);
+            speed_rx_mob = rx_mob - temp_rx_mob;
+            speed_tx_mob = tx_mob - temp_tx_mob;
+            temp_tx_mob = tx_mob;
+            temp_rx_mob = rx_mob;
 
             //updating daily values
-            if (prefs.getBoolean("mobile_en", false) == false)
-            {
-                editor.putLong("d_today", prefs.getLong("d_today", 0) + speed_rx);
-                editor.putLong("u_today", prefs.getLong("u_today", 0) + speed_tx);
-            }
-            else
-            {
-                editor.putLong("d_today_mob", prefs.getLong("d_today", 0) + speed_rx);
-                editor.putLong("u_today_mob", prefs.getLong("u_today", 0) + speed_tx);
-            }
+            editor.putLong("d_today", prefs.getLong("d_today", 0) + speed_rx);
+            editor.putLong("u_today", prefs.getLong("u_today", 0) + speed_tx);
+            editor.putLong("d_today_mob", prefs.getLong("d_today", 0) + speed_rx);
+            editor.putLong("u_today_mob", prefs.getLong("u_today", 0) + speed_tx);
             editor.commit();
 
             //checking for gc
@@ -205,14 +192,13 @@ public class service extends Service
             Time now = new Time();
             now.setToNow();
             String temp = new SimpleDateFormat("yyyy-MM-dd").format(new Date());
-            int temp3 = now.month + 1;
-            Cursor c = db.rawQuery("select * from transfer_hour where hour=\"" + String.valueOf(now.hour) + "\";", null);
+            int t2 = now.hour;
+            int t3 = now.month + 1;
+            Cursor c = db.rawQuery("select * from transfer_hour where hour=\"" + String.valueOf(t2) + "\";", null);
             if (c.getCount() == 0)
-                db.execSQL("insert into transfer_hour values(\"" + String.valueOf(now.hour) + "\",0,0,0,0);");
-            if (mob == false)
-                db.execSQL("update transfer_hour set down=down+" + speed_rx + " , up=up+" + speed_tx + " where hour = '" + String.valueOf(now.hour) + "';");
-            else
-                db.execSQL("update transfer_hour set down_mob=down_mob+" + speed_rx + " , up_mob=up_mob+" + speed_tx + " where hour = '" + String.valueOf(now.hour) + "';");
+                db.execSQL("insert into transfer_hour values(\"" + String.valueOf(t2) + "\",0,0,0,0);");
+
+            db.execSQL("update transfer_hour set down_mob=down_mob+" + speed_rx_mob + " , up_mob=up_mob+" + speed_tx_mob + " , down=down+" + speed_rx + " , up=up+" + speed_tx + " where hour = '" + String.valueOf(t2) + "';");
 
             if (temp.compareTo(date) != 0)
             {
@@ -221,21 +207,13 @@ public class service extends Service
 
                 Log.v("change", "date");
 
-                if (mob == false)
-                    db.execSQL("update transfer_week set down_transfer=" + prefs.getLong("d_today", 0) + " , up_transfer=" + prefs.getLong("u_today", 0) + " where date = '" + date + "';");
-                else
-                    db.execSQL("update transfer_week set down_transfer_mob=" + prefs.getLong("d_today", 0) + " , up_transfer_mob=" + prefs.getLong("u_today", 0) + " where date = '" + date + "';");
+                db.execSQL("update transfer_week set down_transfer=" + prefs.getLong("d_today", 0) + " , up_transfer=" + prefs.getLong("u_today", 0) + " , down_transfer_mob=" + prefs.getLong("d_today_mob", 0) + " , up_transfer_mob=" + prefs.getLong("u_today_mob", 0) + " where date = '" + date + "';");
 
-                if (mob == false)
-                {
-                    editor.putLong("d_today", 0);
-                    editor.putLong("u_today", 0);
-                }
-                else
-                {
-                    editor.putLong("d_today_mob", 0);
-                    editor.putLong("u_today_mob", 0);
-                }
+                editor.putLong("d_today", 0);
+                editor.putLong("u_today", 0);
+
+                editor.putLong("d_today_mob", 0);
+                editor.putLong("u_today_mob", 0);
                 editor.commit();
                 date = temp;
 
@@ -263,10 +241,10 @@ public class service extends Service
             }
 
             //reseting data used on month change
-            if (temp3 != prefs.getInt("cur_month", 0))
+            if (t3 != prefs.getInt("cur_month", 0))
             {
                 editor.putLong("flimit", 0);
-                editor.putInt("cur_month", temp3);
+                editor.putInt("cur_month", t3);
                 editor.putBoolean("noti_visible2", false);
                 editor.commit();
                 nm2.cancel(2);

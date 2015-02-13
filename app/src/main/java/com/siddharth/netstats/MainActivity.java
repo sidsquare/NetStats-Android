@@ -49,15 +49,14 @@ import java.util.List;
 public class MainActivity extends ActionBarActivity
 {
 
-    boolean cfrag1_is_enabled = false, first_time = true;
+    boolean mob, cfrag1_is_enabled = false, first_time = true;
     String temp1 = "0 KB", temp2 = "0 KB", temp3 = "0 KBPS", temp4 = "0 KBPS", temp5 = "0 KB", temp6 = "0 KB", date;
     private Handler handler = new Handler();
-    private long rx, tx, temp_rx, temp_tx, d_offset = 0, u_offset = 0, rx1, tx1;
+    static long rx, tx, temp_rx, temp_tx, d_offset = 0, u_offset = 0, rx1, tx1, d_offset_mob = 0, u_offset_mob = 0, rx_mob, tx_mob, rx1_mob, tx1_mob, temp_rx_mob = 0, temp_tx_mob = 0;
     cfrag1 frag;
     cfrag2 frag2;
     cfrag3 frag3;
     cfrag4 frag4;
-    cfrag5 frag5;
     preference prefe;
     SQLiteDatabase db;
     SharedPreferences sharedPref;
@@ -117,8 +116,12 @@ public class MainActivity extends ActionBarActivity
         Log.v(sharedPref.getString("limit", ""), String.valueOf(sharedPref.getLong("flimit", 0)));
         d_offset = sharedPref.getLong("d_today", 0);
         u_offset = sharedPref.getLong("u_today", 0);
+        d_offset_mob = sharedPref.getLong("d_today_mob", 0);
+        u_offset_mob = sharedPref.getLong("u_today_mob", 0);
         editor.putLong("d_today", 0);
         editor.putLong("u_today", 0);
+        editor.putLong("d_today_mob", 0);
+        editor.putLong("u_today_mob", 0);
         editor.putBoolean("noti_visible2", false);
         editor.commit();
 
@@ -136,7 +139,7 @@ public class MainActivity extends ActionBarActivity
         frag = (cfrag1) getFragmentManager().findFragmentByTag("cfrag1");
 
         //initialize the left drawer
-        mDrawerItems = new String[]{"Data", "Weekly Chart", "Hourly Chart", "App Chart", "App Data Usage", "Settings"};
+        mDrawerItems = new String[]{"Data", "Weekly Chart", "Hourly Chart", "App Chart", "Settings"};
         mDrawerLayout = (DrawerLayout) findViewById(R.id.drawer_layout);
         mDrawerLayout.setDrawerShadow(R.drawable.drawer_shadow, GravityCompat.START);
         mDrawerList = (ListView) findViewById(R.id.left_drawer);
@@ -219,24 +222,8 @@ public class MainActivity extends ActionBarActivity
                             setdata3();
                         }
                         break;
+
                     case 4:
-                        cfrag1_is_enabled = false;
-
-                        //switch fragments
-                        cfrag5 newFragment5 = new cfrag5();
-                        ft = getFragmentManager().beginTransaction();
-                        ft.replace(R.id.content_frame, newFragment5, "cfrag5");
-                        ft.commit();
-                        getFragmentManager().executePendingTransactions();   //fucking important
-
-                        //initialize the view
-                        frag5 = (cfrag5) getFragmentManager().findFragmentByTag("cfrag5");
-                        if (frag != null)
-                        {
-                            setdata4();
-                        }
-                        break;
-                    case 5:
                         cfrag1_is_enabled = false;
 
                         //switch fragments
@@ -313,12 +300,6 @@ public class MainActivity extends ActionBarActivity
         prog();
     }
 
-    private void setdata4()
-    {
-
-    }
-
-
     //class for storing app information
     class MyClass
     {
@@ -373,13 +354,16 @@ public class MainActivity extends ActionBarActivity
             Cursor c = db.rawQuery("select * from app where package=\"" + tempe.package_name + "\";", null);
             if (c.getCount() == 0)
             {
-                db.execSQL("insert into app values(\"" + tempe.package_name + "\",0,0);");
+                db.execSQL("insert into app values(\"" + tempe.package_name + "\",0,0,0,0);");
                 tempe.rx = (long) 0 + uid_rx;
             }
             else
             {
                 c.moveToFirst();
-                tempe.rx = Long.valueOf(c.getInt(1)) + uid_rx;
+                if (sharedPref.getBoolean("mobile_en", false) == false)
+                    tempe.rx = Long.valueOf(c.getInt(1)) + uid_rx;
+                else
+                    tempe.rx = Long.valueOf(c.getInt(3)) + uid_rx;
             }
             temp_f.add(tempe);
         }
@@ -522,7 +506,6 @@ public class MainActivity extends ActionBarActivity
         db.execSQL("create table if not exists app('package' varchar not null ,'down' integer,'up' integer,'down_mob' integer,'up_mob' integer);");
 
         //get today's date and create entry
-        Time now = new Time();
         date = new SimpleDateFormat("yyyy-MM-dd").format(new Date());
         Cursor c = db.rawQuery("select * from transfer_week where date=\"" + date + "\";", null);
         if (c.getCount() == 0)
@@ -536,38 +519,33 @@ public class MainActivity extends ActionBarActivity
         @Override
         public void run()
         {
-            boolean mob = sharedPref.getBoolean("mobile_en", false);
+
             //intialize fragment at startup
+
             if (first_time)
             {
-                Cursor c;
-                if (mob == false)
-                    c = db.rawQuery("select down_transfer,up_transfer from transfer_week where date=\"" + date + "\";", null);
-                else
-                    c = db.rawQuery("select down_transfer_mob,up_transfer_mob from transfer_week where date=\"" + date + "\";", null);
+                Cursor c = db.rawQuery("select down_transfer,up_transfer,down_transfer_mob,up_transfer_mob from transfer_week where date=\"" + date + "\";", null);
                 if (c.getCount() != 0)
                 {
                     c.moveToFirst();
                     d_offset = c.getInt(0);
                     u_offset = c.getInt(1);
-                    temp5 = String.valueOf(d_offset) + " KB";
-                    temp6 = String.valueOf(u_offset) + " KB";
+                    d_offset_mob = c.getInt(2);
+                    u_offset_mob = c.getInt(3);
                 }
 
-                if (mob == false)
-                {
-                    rx = TrafficStats.getTotalRxBytes();
-                    tx = TrafficStats.getTotalTxBytes();
-                }
-                else
-                {
-                    rx = TrafficStats.getMobileRxBytes();
-                    tx = TrafficStats.getMobileTxBytes();
-                }
+                rx = TrafficStats.getTotalRxBytes();
                 rx = rx / (1024);
+                tx = TrafficStats.getTotalTxBytes();
                 tx = tx / (1024);
-                temp_tx = tx;
+                rx_mob = TrafficStats.getMobileRxBytes();
+                rx_mob = rx_mob / (1024);
+                tx_mob = TrafficStats.getMobileTxBytes();
+                tx_mob = tx_mob / (1024);
                 temp_rx = rx;
+                temp_tx = tx;
+                temp_rx_mob = rx_mob;
+                temp_tx_mob = tx_mob;
                 frag.go(temp1, temp2, temp3, temp4, temp5, temp6);
                 first_time = false;
             }
@@ -576,65 +554,87 @@ public class MainActivity extends ActionBarActivity
                 //get and set current stats
                 if (cfrag1_is_enabled && frag != null)
                     frag.go(temp1, temp2, temp3, temp4, temp5, temp6);
-                if (mob == false)
-                {
-                    rx1 = TrafficStats.getTotalRxBytes();
-                    tx1 = TrafficStats.getTotalTxBytes();
-                }
-                else
-                {
-                    rx1 = TrafficStats.getMobileRxBytes();
-                    tx1 = TrafficStats.getMobileTxBytes();
-                }
+                rx1 = TrafficStats.getTotalRxBytes();
                 rx1 = rx1 / (1024);
+                tx1 = TrafficStats.getTotalTxBytes();
                 tx1 = tx1 / (1024);
-                long down_speed = rx1 - temp_rx, up_speed = tx1 - temp_tx, down_data = rx1 - rx, up_data = tx1 - tx;
+                rx1_mob = TrafficStats.getMobileRxBytes();
+                rx1_mob = rx1_mob / (1024);
+                tx1_mob = TrafficStats.getMobileTxBytes();
+                tx1_mob = tx1_mob / (1024);
+
+                mob = sharedPref.getBoolean("mobile_en", false);
+                long down_speed, up_speed, down_data, up_data, x , y , a , b ;
+
+                //mobile
+                x = rx1_mob - rx_mob;
+                y = tx1_mob - tx_mob;
+                a = rx1_mob - temp_rx_mob;
+                b = tx1_mob - temp_tx_mob;
+                d_offset_mob += a;
+                u_offset_mob += b;
+
+                //total
+                down_data = rx1 - rx;
+                up_data = tx1 - tx;
+                down_speed = rx1 - temp_rx;
+                up_speed = tx1 - temp_tx;
                 d_offset += down_speed;
                 u_offset += up_speed;
-
-                //assigning current stat
-                temp1 = Long.toString(down_data) + " KB";
-                temp2 = Long.toString(up_data) + " KB";
-                temp3 = Long.toString(down_speed) + " KBPS";
-                temp4 = Long.toString(up_speed) + " KBPS";
-                temp5 = Long.toString(d_offset) + " KB";
-                temp6 = Long.toString(u_offset) + " KB";
-
-
-                temp_tx = tx1;
-                temp_rx = rx1;
 
                 //automatic date change
                 Time now = new Time();
                 now.setToNow();
                 String temp = new SimpleDateFormat("yyyy-MM-dd").format(new Date());
-                int temp2 = now.hour;
-                int temp3 = now.month + 1;
+                int t2 = now.hour;
+                int t3 = now.month + 1;
                 if (temp.compareTo(date) != 0)
                 {
                     date = temp;
                     d_offset = u_offset = 0;
+                    d_offset_mob = u_offset_mob = 0;
                     db.execSQL("insert into transfer_week values(\"" + temp + "\",0,0,0,0);");//changing date back to original --- handle sql exception later
                 }
-                Cursor c = db.rawQuery("select * from transfer_hour where hour=\"" + String.valueOf(temp2) + "\";", null);
+                db.execSQL("update transfer_week set down_transfer_mob=down_transfer_mob+" + a + " , up_transfer_mob=up_transfer_mob+" + b + " , down_transfer=down_transfer+" + down_speed + " , up_transfer=up_transfer+" + up_speed + " where date = '" + date + "';");
+                Cursor c = db.rawQuery("select * from transfer_hour where hour=\"" + String.valueOf(t2) + "\";", null);
                 if (c.getCount() == 0)
-                    db.execSQL("insert into transfer_hour values(\"" + String.valueOf(temp2) + "\",0,0,0,0);");
-                if (mob == false)
+                    db.execSQL("insert into transfer_hour values(\"" + String.valueOf(t2) + "\",0,0,0,0);");
+                db.execSQL("update transfer_hour set down_mob=down_mob+" + a + " , up_mob=up_mob+" + b + " , down=down+" + down_speed + " , up=up+" + up_speed + " where hour = '" + String.valueOf(t2) + "';");
+
+
+                //assigning current stat
+                if (mob == true)
                 {
-                    db.execSQL("update transfer_week set down_transfer=down_transfer+" + down_speed + " , up_transfer=up_transfer+" + up_speed + " where date = '" + date + "';");
-                    db.execSQL("update transfer_hour set down=down+" + down_speed + " , up=up+" + up_speed + " where hour = '" + String.valueOf(temp2) + "';");
+                    down_speed = a;
+                    down_data = x;
+                    up_data = y;
+                    up_speed = b;
+                    temp5 = Long.toString(d_offset_mob) + " KB";
+                    temp6 = Long.toString(u_offset_mob) + " KB";
                 }
                 else
                 {
-                    db.execSQL("update transfer_week set down_transfer_mob=down_transfer_mob+" + down_speed + " , up_transfer_mob=up_transfer_mob+" + up_speed + " where date = '" + date + "';");
-                    db.execSQL("update transfer_hour set down_mob=down_mob+" + down_speed + " , up_mob=up_mob+" + up_speed + " where hour = '" + String.valueOf(temp2) + "';");
+
+                    temp5 = Long.toString(d_offset) + " KB";
+                    temp6 = Long.toString(u_offset) + " KB";
+
                 }
+                temp1 = Long.toString(down_data) + " KB";
+                temp2 = Long.toString(up_data) + " KB";
+                temp3 = Long.toString(down_speed) + " KBPS";
+                temp4 = Long.toString(up_speed) + " KBPS";
+
+                temp_rx = rx1;
+                temp_tx = tx1;
+                temp_rx_mob = rx1_mob;
+                temp_tx_mob = tx1_mob;
+
 
                 //limit
                 editor.putLong("flimit", sharedPref.getLong("flimit", 0) + down_speed + up_speed);
                 editor.commit();
 
-                if (sharedPref.getLong("flimit", 0) >= 1111110/*(Long.parseLong(sharedPref.getString("limit", "0")) * 1024)*/ && sharedPref.getBoolean("noti_visible2", false) == false)
+                if (sharedPref.getLong("flimit", 0) >= (Long.parseLong(sharedPref.getString("limit", "0")) * 1024) && sharedPref.getBoolean("noti_visible2", false) == false)
                 {
                     builder1 = new Notification.Builder(getApplicationContext());
                     builder1.setContentTitle("Warning");
@@ -650,10 +650,10 @@ public class MainActivity extends ActionBarActivity
                 }
 
                 //reseting data used on month change
-                if (temp3 != sharedPref.getInt("cur_month", 0))
+                if (t3 != sharedPref.getInt("cur_month", 0))
                 {
                     editor.putLong("flimit", 0);
-                    editor.putInt("cur_month", temp3);
+                    editor.putInt("cur_month", t3);
                     editor.putBoolean("noti_visible2", false);
                     editor.commit();
                     nm2.cancel(2);
@@ -731,16 +731,11 @@ public class MainActivity extends ActionBarActivity
         notificationManger.cancel(1);
         SharedPreferences.Editor editor = sharedPref.edit();
         editor.putBoolean("dnd", true);
-        if (sharedPref.getBoolean("mobile_en", false) == false)
-        {
-            editor.putLong("d_today", d_offset);
-            editor.putLong("u_today", u_offset);
-        }
-        else
-        {
-            editor.putLong("d_today_mob", d_offset);
-            editor.putLong("u_today_mob", u_offset);
-        }
+        editor.putLong("d_today", d_offset);
+        editor.putLong("u_today", u_offset);
+        editor.putLong("d_today_mob", d_offset);
+        editor.putLong("u_today_mob", u_offset);
+
         editor.commit();
         Intent serviceIntent = new Intent(this, service.class);
         startService(serviceIntent);

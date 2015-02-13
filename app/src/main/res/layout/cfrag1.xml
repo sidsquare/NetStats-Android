@@ -134,18 +134,22 @@
         android:text="Today"
         android:id="@+id/textView4"
         android:layout_above="@+id/textView"
-        android:layout_alignRight="@+id/tv5"
-        android:layout_alignEnd="@+id/tv5"/>
+        android:layout_alignParentRight="true"
+        android:layout_alignParentEnd="true"
+        android:layout_alignLeft="@+id/tv5"
+        android:layout_alignStart="@+id/tv5"/>
 
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="0 KB"
         android:id="@+id/tv5"
-        android:layout_alignBaseline="@+id/textView"
-        android:layout_alignBottom="@+id/textView"
-        android:layout_toRightOf="@+id/tv3"
-        android:layout_toEndOf="@+id/tv3"/>
+        android:layout_alignTop="@+id/textView"
+        android:layout_toRightOf="@+id/tv1"
+        android:layout_marginLeft="30dp"
+        android:layout_marginStart="30dp"
+        android:layout_alignParentRight="true"
+        android:layout_alignParentEnd="true"/>
 
     <TextView
         android:layout_width="wrap_content"
