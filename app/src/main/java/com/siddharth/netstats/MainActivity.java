@@ -38,12 +38,15 @@ import com.github.mikephil.charting.data.Entry;
 import com.github.mikephil.charting.data.PieDataSet;
 import com.github.mikephil.charting.utils.ColorTemplate;
 
+import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
+
+import static java.lang.Math.pow;
 
 
 public class MainActivity extends ActionBarActivity
@@ -564,7 +567,7 @@ public class MainActivity extends ActionBarActivity
                 tx1_mob = tx1_mob / (1024);
 
                 mob = sharedPref.getBoolean("mobile_en", false);
-                long down_speed, up_speed, down_data, up_data, x , y , a , b ;
+                long down_speed, up_speed, down_data, up_data, x, y, a, b;
 
                 //mobile
                 x = rx1_mob - rx_mob;
@@ -602,6 +605,24 @@ public class MainActivity extends ActionBarActivity
                 db.execSQL("update transfer_hour set down_mob=down_mob+" + a + " , up_mob=up_mob+" + b + " , down=down+" + down_speed + " , up=up+" + up_speed + " where hour = '" + String.valueOf(t2) + "';");
 
 
+                //formatting units for display
+                int l = Integer.parseInt(sharedPref.getString("listPref", "")) - 1;
+                String unit;
+                if (l == 0)
+                    unit = " KB";
+                else if (l == 1)
+                    unit = " MB";
+                else if (l == 2)
+                    unit = " GB";
+                else
+                    unit = " TB";
+                long divisor = (long) pow(1024, l);
+                DecimalFormat df;
+                if (l != 0)
+                    df = new DecimalFormat("0.000");
+                else
+                    df = new DecimalFormat("0");
+
                 //assigning current stat
                 if (mob == true)
                 {
@@ -609,20 +630,20 @@ public class MainActivity extends ActionBarActivity
                     down_data = x;
                     up_data = y;
                     up_speed = b;
-                    temp5 = Long.toString(d_offset_mob) + " KB";
-                    temp6 = Long.toString(u_offset_mob) + " KB";
+                    temp5 = df.format((float) d_offset_mob / divisor) + unit;
+                    temp6 = df.format((float) u_offset_mob / divisor) + unit;
                 }
                 else
                 {
 
-                    temp5 = Long.toString(d_offset) + " KB";
-                    temp6 = Long.toString(u_offset) + " KB";
+                    temp5 = df.format((float) d_offset / divisor) + unit;
+                    temp6 = df.format((float) u_offset / divisor) + unit;
 
                 }
-                temp1 = Long.toString(down_data) + " KB";
-                temp2 = Long.toString(up_data) + " KB";
-                temp3 = Long.toString(down_speed) + " KBPS";
-                temp4 = Long.toString(up_speed) + " KBPS";
+                temp1 = df.format((float) down_data / divisor) + unit;
+                temp2 = df.format((float) up_data / divisor) + unit;
+                temp3 = df.format((float) down_speed / divisor) + unit;
+                temp4 = df.format((float) up_speed / divisor) + unit;
 
                 temp_rx = rx1;
                 temp_tx = tx1;

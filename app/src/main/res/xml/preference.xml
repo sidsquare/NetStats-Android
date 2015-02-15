@@ -1,13 +1,21 @@
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
     <PreferenceCategory
         android:title="Settings">
+        <ListPreference
+            android:title="Unit for Data Usage"
+            android:summary="Select the unit of Data measurement"
+            android:key="listPref"
+            android:entries="@array/listentries"
+            android:entryValues="@array/listvalues"
+            android:defaultValue="1"/>
     <CheckBoxPreference
         android:key="start_at_boot"
         android:title="Start on Boot"
         android:defaultValue="false"/>
     <CheckBoxPreference
             android:key="mobile_en"
-            android:title="Only Monitor Mobile Data Transfer"
+            android:title="Data Monitoring"
+            android:summary="Monitor only Mobile Data"
             android:defaultValue="false"/>
 
     <CheckBoxPreference
@@ -23,7 +31,7 @@
     />
         <CheckBoxPreference
             android:key="limit_on_wifi"
-            android:title="Apply Data Transfer Limit on WIFI"
+            android:title="Apply Data Limit on WIFI"
             android:defaultValue="false"/>
     </PreferenceCategory>
 </PreferenceScreen>
