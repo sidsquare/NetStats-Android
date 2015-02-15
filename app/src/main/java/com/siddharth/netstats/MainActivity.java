@@ -317,7 +317,7 @@ public class MainActivity extends ActionBarActivity
         @Override
         public int compare(MyClass o1, MyClass o2)
         {
-            return (o1.rx > o2.rx ? -1 : (o1.rx == o2.rx ? 0 : 1));
+            return (o1.rx > o2.rx ? -1 : (o1.rx.equals(o2.rx) ? 0 : 1));
         }
     }
 
@@ -330,7 +330,6 @@ public class MainActivity extends ActionBarActivity
         int uid;
         long uid_rx, uid_tx;
         ArrayList<MyClass> temp_f = new ArrayList<>();
-        ArrayList<Long> temp_uid_tx = new ArrayList<>();
 
         //cycle through installed apps to get net usage
         for (ApplicationInfo packageInfo : packages)
@@ -363,27 +362,36 @@ public class MainActivity extends ActionBarActivity
             else
             {
                 c.moveToFirst();
-                if (sharedPref.getBoolean("mobile_en", false) == false)
-                    tempe.rx = Long.valueOf(c.getInt(1)) + uid_rx;
+                if (!sharedPref.getBoolean("mobile_en", false))
+                    tempe.rx = (long) c.getInt(1) + uid_rx + (long) c.getInt(2) + uid_tx;
                 else
-                    tempe.rx = Long.valueOf(c.getInt(3)) + uid_rx;
+                    tempe.rx = (long) c.getInt(3) + uid_rx + (long) c.getInt(4) + uid_tx;
             }
-            temp_f.add(tempe);
+            if (tempe.rx > 0)
+                temp_f.add(tempe);
         }
         //sort to get top 5 apps
         Collections.sort(temp_f, new MyIntComparable());
-        for (int x = 0; x < 5; x++)
+        try
         {
-            MyClass ex = temp_f.get(x);
-            xVals.add(ex.app);
-            yVals1.add(new Entry((float) ex.rx / 1024, x));
+
+            for (int x = 0; x < 5; x++)
+            {
+                MyClass ex = temp_f.get(x);
+                xVals.add(ex.app);
+                yVals1.add(new Entry((float) ex.rx / 1024, x));
+            }
+        }
+        catch (IndexOutOfBoundsException gh)
+        {
+
         }
 
         //charting
         PieDataSet set1 = new PieDataSet(yVals1, "");
         set1.setSliceSpace(7f);
 
-        ArrayList<Integer> colors = new ArrayList<Integer>();
+        ArrayList<Integer> colors = new ArrayList<>();
 
         for (int c1 : ColorTemplate.VORDIPLOM_COLORS)
             colors.add(c1);
@@ -404,13 +412,14 @@ public class MainActivity extends ActionBarActivity
 
         set1.setColors(colors);
         frag4.go(xVals, set1);
+
     }
 
     private void setdata2()
     {
         db = openOrCreateDatabase("database", Context.MODE_PRIVATE, null);
         Cursor c;
-        if (sharedPref.getBoolean("mobile_en", false) == false)
+        if (!sharedPref.getBoolean("mobile_en", false))
             c = db.rawQuery("select hour,down,up from transfer_hour order by CAST(hour AS INTEGER);", null);
         else
             c = db.rawQuery("select hour,down_mob,up_mob from transfer_hour order by CAST(hour AS INTEGER);", null);
@@ -466,7 +475,7 @@ public class MainActivity extends ActionBarActivity
     {
         db = openOrCreateDatabase("database", Context.MODE_PRIVATE, null);
         Cursor c;
-        if (sharedPref.getBoolean("mobile_en", false) == false)
+        if (!sharedPref.getBoolean("mobile_en", false))
             c = db.rawQuery("select down_transfer from transfer_week order by date(date) asc limit 7;", null);
         else
             c = db.rawQuery("select down_transfer_mob from transfer_week order by date(date) asc limit 7;", null);
@@ -624,7 +633,7 @@ public class MainActivity extends ActionBarActivity
                     df = new DecimalFormat("0");
 
                 //assigning current stat
-                if (mob == true)
+                if (mob)
                 {
                     down_speed = a;
                     down_data = x;
@@ -655,7 +664,7 @@ public class MainActivity extends ActionBarActivity
                 editor.putLong("flimit", sharedPref.getLong("flimit", 0) + down_speed + up_speed);
                 editor.commit();
 
-                if (sharedPref.getLong("flimit", 0) >= (Long.parseLong(sharedPref.getString("limit", "0")) * 1024) && sharedPref.getBoolean("noti_visible2", false) == false)
+                if (sharedPref.getLong("flimit", 0) >= (Long.parseLong(sharedPref.getString("limit", "0")) * 1024) && !sharedPref.getBoolean("noti_visible2", false))
                 {
                     builder1 = new Notification.Builder(getApplicationContext());
                     builder1.setContentTitle("Warning");

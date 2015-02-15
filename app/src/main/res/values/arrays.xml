@@ -6,10 +6,20 @@
         <item>GB</item>
         <item>TB</item>
     </string-array>
+    <string-array name="listentries2">
+        <item>KBPS</item>
+        <item>MBPS</item>
+        <item>GBPS</item>
+    </string-array>
     <string-array name="listvalues">
         <item>1</item>
         <item>2</item>
         <item>3</item>
         <item>4</item>
+    </string-array>
+    <string-array name="listvalues2">
+        <item>1</item>
+        <item>2</item>
+        <item>3</item>
     </string-array>
 </resources>
