@@ -16,8 +16,11 @@ import android.os.IBinder;
 import android.text.format.Time;
 import android.util.Log;
 
+import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+
+import static java.lang.Math.pow;
 
 public class service extends Service
 {
@@ -221,6 +224,8 @@ public class service extends Service
                 counter = 0;
             }
 
+            if(mob==true)
+            {speed_rx=speed_rx_mob;speed_tx=speed_tx_mob;}
             //limit
             editor.putLong("flimit", prefs.getLong("flimit", 0) + speed_rx + speed_tx);
             editor.commit();
@@ -262,7 +267,22 @@ public class service extends Service
 
             if (prefs.getBoolean("noti_visible_serv", false))
             {
-                builder.setContentText("Down : " + speed_rx + " KBPS         " + "Up : " + speed_tx + " KBPS");
+                int l = Integer.parseInt(prefs.getString("listPref2", "")) - 1;
+                String unit2;
+                if (l == 0)
+                    unit2 = " KBPS";
+                else if (l == 1)
+                    unit2 = " MBPS";
+                else
+                    unit2 = " GBPS";
+                long divisor2 = (long) pow(1024, l);
+                DecimalFormat df2;
+                if (l != 0)
+                    df2 = new DecimalFormat("0.000");
+                else
+                    df2 = new DecimalFormat("0");
+
+                builder.setContentText("Down : " + df2.format((float) speed_rx / divisor2) + unit2+"   " + "Up : " +df2.format((float) speed_tx / divisor2) + unit2);
                 notificationManger.notify(1, builder.build());
             }
 

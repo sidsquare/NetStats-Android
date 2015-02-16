@@ -286,7 +286,7 @@ public class MainActivity extends ActionBarActivity
         PendingIntent pendintIntent = PendingIntent.getBroadcast(this, 0, intent, 0);
         builder.setDeleteIntent(pendintIntent);
         builder.setContentTitle("NetStats");
-        builder.setContentText("Down : 0 KBPS         " + "Up : 0 KBPS");
+        builder.setContentText("Down : 0 KBPS    " + "Up : 0 KBPS");
         builder.setSmallIcon(R.drawable.no);
         builder.setAutoCancel(true);
         builder.setPriority(0);
@@ -632,6 +632,21 @@ public class MainActivity extends ActionBarActivity
                 else
                     df = new DecimalFormat("0");
 
+                l = Integer.parseInt(sharedPref.getString("listPref2", "")) - 1;
+                String unit2;
+                if (l == 0)
+                    unit2 = " KBPS";
+                else if (l == 1)
+                    unit2 = " MBPS";
+                else
+                    unit2 = " GBPS";
+                long divisor2 = (long) pow(1024, l);
+                DecimalFormat df2;
+                if (l != 0)
+                    df2 = new DecimalFormat("0.000");
+                else
+                    df2 = new DecimalFormat("0");
+
                 //assigning current stat
                 if (mob)
                 {
@@ -651,8 +666,11 @@ public class MainActivity extends ActionBarActivity
                 }
                 temp1 = df.format((float) down_data / divisor) + unit;
                 temp2 = df.format((float) up_data / divisor) + unit;
-                temp3 = df.format((float) down_speed / divisor) + unit;
-                temp4 = df.format((float) up_speed / divisor) + unit;
+
+
+
+                temp3 = df2.format((float) down_speed / divisor2) + unit2;
+                temp4 = df2.format((float) up_speed / divisor2) + unit2;
 
                 temp_rx = rx1;
                 temp_tx = tx1;
@@ -700,7 +718,7 @@ public class MainActivity extends ActionBarActivity
 
                 if (sharedPref.getBoolean("noti_visible", false))
                 {
-                    builder.setContentText("Down : " + down_speed + " KBPS         " + "Up : " + up_speed + " KBPS");
+                    builder.setContentText("Down : " + df2.format((float) down_speed / divisor2) + unit2+"   " + "Up : " +df2.format((float) down_speed / divisor2) + unit2);
                     notificationManger.notify(1, builder.build());
                 }
 
