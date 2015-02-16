@@ -42,5 +42,10 @@
             android:key="limit_on_wifi"
             android:title="Apply Data Limit on WIFI"
             android:defaultValue="false"/>
+        <!--<Preference
+            android:id="@+id/purge"
+            android:key="purge"
+            android:summary="Clear all Data"
+            android:title="Purge" />-->
     </PreferenceCategory>
 </PreferenceScreen>

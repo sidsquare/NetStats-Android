@@ -258,8 +258,7 @@ public class MainActivity extends ActionBarActivity
 
         //open the database
         db = openOrCreateDatabase("database", Context.MODE_PRIVATE, null);
-        db.beginTransaction();
-        db.execSQL("CREATE TABLE IF NOT EXISTS transfer_week('date' VARCHAR NOT NULL UNIQUE,'down_transfer' integer,'up_transfer' integer,'down_transfer_mob' integer,'up_transfer_mob' integer);");
+        db.execSQL("create table if not exists transfer_week('date' VARCHAR NOT NULL UNIQUE,'down_transfer' integer,'up_transfer' integer,'down_transfer_mob' integer,'up_transfer_mob' integer);");
         db.execSQL("create table if not exists transfer_hour('hour' integer not null unique,'down' integer,'up' integer,'down_mob' integer,'up_mob' integer);");
         db.execSQL("create table if not exists this_month('package' varchar not null ,'date' varchar not null,'app' varchar,'down' integer,'up' integer,'down_mob' integer,'up_mob' integer);");
         db.execSQL("create table if not exists app('package' varchar not null ,'down' integer,'up' integer,'down_mob' integer,'up_mob' integer);");
@@ -269,7 +268,6 @@ public class MainActivity extends ActionBarActivity
         Cursor c = db.rawQuery("select * from transfer_week where date=\"" + date + "\";", null);
         if (c.getCount() == 0)
             db.execSQL("insert into transfer_week values(\"" + date + "\",0,0,0,0);");
-        db.endTransaction();
 
         handler.postDelayed(runnable, 1000);
     }
@@ -488,8 +486,8 @@ public class MainActivity extends ActionBarActivity
         public void run()
         {
 
-            //intialize fragment at startup
-            db.beginTransaction();
+            //initialize fragment at startup
+
             if (first_time)
             {
                 Cursor c = db.rawQuery("select down_transfer,up_transfer,down_transfer_mob,up_transfer_mob from transfer_week where date=\"" + date + "\";", null);
@@ -517,6 +515,12 @@ public class MainActivity extends ActionBarActivity
                 frag.go(temp1, temp2, temp3, temp4, temp5, temp6);
                 first_time = false;
             }
+            /*if(sharedPref.getBoolean("purge",false))
+            {
+                self_destruct();
+            }*/
+            db.beginTransaction();
+
             try
             {
                 //get and set current stats
@@ -571,7 +575,7 @@ public class MainActivity extends ActionBarActivity
 
 
                 //formatting units for display
-                int l = Integer.parseInt(sharedPref.getString("listPref", "")) - 1;
+                int l = Integer.parseInt(sharedPref.getString("listPref", "1")) - 1;
                 String unit;
                 if (l == 0)
                     unit = " KB";
@@ -588,7 +592,7 @@ public class MainActivity extends ActionBarActivity
                 else
                     df = new DecimalFormat("0");
 
-                l = Integer.parseInt(sharedPref.getString("listPref2", "")) - 1;
+                l = Integer.parseInt(sharedPref.getString("listPref2", "1")) - 1;
                 String unit2;
                 if (l == 0)
                     unit2 = " KBPS";
@@ -634,24 +638,26 @@ public class MainActivity extends ActionBarActivity
 
 
                 //limit
-                editor.putLong("flimit", sharedPref.getLong("flimit", 0) + down_speed + up_speed);
-                editor.commit();
-
-                if (sharedPref.getLong("flimit", 0) >= (Long.parseLong(sharedPref.getString("limit", "0")) * 1024) && !sharedPref.getBoolean("noti_visible2", false))
+                if(mob==true)
                 {
-                    builder1 = new Notification.Builder(getApplicationContext());
-                    builder1.setContentTitle("Warning");
-                    builder1.setContentText("You have reached the Monthly limit");
-                    builder1.setSmallIcon(R.drawable.no);
-                    builder1.setAutoCancel(true);
-                    builder1.setPriority(0);
-                    builder1.setOngoing(false);
-                    n2 = builder1.build();
-                    nm2 = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
-                    nm2.notify(2, n2);
-                    editor.putBoolean("noti_visible2", true);
-                }
+                    editor.putLong("flimit", sharedPref.getLong("flimit", 0) + down_speed + up_speed);
+                    editor.commit();
 
+                    if (sharedPref.getLong("flimit", 0) >= (Long.parseLong(sharedPref.getString("limit", "0")) * 1024) && !sharedPref.getBoolean("noti_visible2", false))
+                    {
+                        builder1 = new Notification.Builder(getApplicationContext());
+                        builder1.setContentTitle("Warning");
+                        builder1.setContentText("You have reached the Monthly limit");
+                        builder1.setSmallIcon(R.drawable.no);
+                        builder1.setAutoCancel(true);
+                        builder1.setPriority(0);
+                        builder1.setOngoing(false);
+                        n2 = builder1.build();
+                        nm2 = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+                        nm2.notify(2, n2);
+                        editor.putBoolean("noti_visible2", true);
+                    }
+                }
                 //reseting data used on month change
                 if (t3 != sharedPref.getInt("cur_month", 0))
                 {
@@ -659,7 +665,7 @@ public class MainActivity extends ActionBarActivity
                     editor.putInt("cur_month", t3);
                     editor.putBoolean("noti_visible2", false);
                     editor.commit();
-                    nm2.cancel(2);
+                    nm2.cancelAll();
                 }
 
                 if (!sharedPref.getBoolean("not_pers", false))
@@ -677,14 +683,31 @@ public class MainActivity extends ActionBarActivity
                     notificationManger.notify(1, builder.build());
                 }
                 db.endTransaction();
-                handler.postDelayed(this, 1000);
             }
             catch (NullPointerException n)
             {
                 Log.v("piss", "off");
             }
+
+        handler.postDelayed(this, 1000);
         }
     };
+
+    private void self_destruct()
+    {
+        db.execSQL("delete from 'transfer_week';");
+        db.execSQL("delete from 'transfer_hour';");
+        db.execSQL("delete from 'this_month';");
+        db.execSQL("delete from 'app'");
+        editor.putBoolean("purge",false);
+        editor.commit();
+
+        //get today's date and create entry
+        date = new SimpleDateFormat("yyyy-MM-dd").format(new Date());
+        Cursor c = db.rawQuery("select * from transfer_week where date=\"" + date + "\";", null);
+        if (c.getCount() == 0)
+            db.execSQL("insert into transfer_week values(\"" + date + "\",0,0,0,0);");
+    }
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu)
@@ -776,6 +799,8 @@ public class MainActivity extends ActionBarActivity
             editor.putLong("d_today_mob", 0);
         if (!sharedPref.contains("u_today_mob"))
             editor.putLong("u_today_mob", 0);
+        if (!sharedPref.contains("purge"))
+            editor.putBoolean("purge", false);
         editor.putBoolean("is_app_open", true);
         editor.putBoolean("dnd", false);
 
@@ -789,6 +814,8 @@ public class MainActivity extends ActionBarActivity
         editor.putLong("u_today", 0);
         editor.putLong("d_today_mob", 0);
         editor.putLong("u_today_mob", 0);
+
+        editor.putBoolean("purge", false);
         editor.putBoolean("noti_visible2", false);
         editor.commit();
     }

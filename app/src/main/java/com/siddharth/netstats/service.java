@@ -224,25 +224,33 @@ public class service extends Service
                 counter = 0;
             }
 
-            if(mob==true)
-            {speed_rx=speed_rx_mob;speed_tx=speed_tx_mob;}
-            //limit
-            editor.putLong("flimit", prefs.getLong("flimit", 0) + speed_rx + speed_tx);
-            editor.commit();
-
-            if (prefs.getLong("flimit", 0) >= (Long.parseLong(prefs.getString("limit", "0")) * 1024) && prefs.getBoolean("noti_visible2", false) == false)
+            if (mob == true)
             {
-                builder1 = new Notification.Builder(getApplicationContext());
-                builder1.setContentTitle("Warning");
-                builder1.setContentText("You have reached the Monthly limit");
-                builder1.setSmallIcon(R.drawable.no);
-                builder1.setAutoCancel(true);
-                builder1.setPriority(0);
-                builder1.setOngoing(false);
-                n2 = builder1.build();
-                nm2 = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
-                nm2.notify(2, n2);
-                editor.putBoolean("noti_visible2", true);
+                speed_rx = speed_rx_mob;
+                speed_tx = speed_tx_mob;
+            }
+
+
+            //limit
+            if (mob == true)
+            {
+                editor.putLong("flimit", prefs.getLong("flimit", 0) + speed_rx + speed_tx);
+                editor.commit();
+
+                if (prefs.getLong("flimit", 0) >= (Long.parseLong(prefs.getString("limit", "0")) * 1024) && prefs.getBoolean("noti_visible2", false) == false)
+                {
+                    builder1 = new Notification.Builder(getApplicationContext());
+                    builder1.setContentTitle("Warning");
+                    builder1.setContentText("You have reached the Monthly limit");
+                    builder1.setSmallIcon(R.drawable.no);
+                    builder1.setAutoCancel(true);
+                    builder1.setPriority(0);
+                    builder1.setOngoing(false);
+                    n2 = builder1.build();
+                    nm2 = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+                    nm2.notify(2, n2);
+                    editor.putBoolean("noti_visible2", true);
+                }
             }
 
             //reseting data used on month change
@@ -282,7 +290,7 @@ public class service extends Service
                 else
                     df2 = new DecimalFormat("0");
 
-                builder.setContentText("Down : " + df2.format((float) speed_rx / divisor2) + unit2+"   " + "Up : " +df2.format((float) speed_tx / divisor2) + unit2);
+                builder.setContentText("Down : " + df2.format((float) speed_rx / divisor2) + unit2 + "   " + "Up : " + df2.format((float) speed_tx / divisor2) + unit2);
                 notificationManger.notify(1, builder.build());
             }
 
