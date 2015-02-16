@@ -18,7 +18,9 @@ public final class R {
     }
     public static final class array {
         public static final int listentries=0x7f060000;
-        public static final int listvalues=0x7f060001;
+        public static final int listentries2=0x7f060001;
+        public static final int listvalues=0x7f060002;
+        public static final int listvalues2=0x7f060003;
     }
     public static final class attr {
         /** <p>Must be a reference to another resource, in the form "<code>@[+][<i>package</i>:]<i>type</i>:<i>name</i></code>"
@@ -1334,7 +1336,7 @@ containing a value of this type.
         public static final int content_frame=0x7f0a0040;
         public static final int decor_content_parent=0x7f0a002f;
         public static final int default_activity_button=0x7f0a0024;
-        public static final int detail=0x7f0a004d;
+        public static final int detail=0x7f0a0049;
         public static final int dialog=0x7f0a001b;
         public static final int disableHome=0x7f0a000c;
         public static final int drawer_layout=0x7f0a003f;
@@ -1378,19 +1380,19 @@ containing a value of this type.
         public static final int textView=0x7f0a0042;
         public static final int textView2=0x7f0a0044;
         public static final int textView3=0x7f0a0043;
-        public static final int textView4=0x7f0a004e;
-        public static final int textView5=0x7f0a0048;
-        public static final int textView6=0x7f0a0049;
-        public static final int textView7=0x7f0a004a;
-        public static final int textView8=0x7f0a004b;
+        public static final int textView4=0x7f0a004a;
+        public static final int textView5=0x7f0a0050;
+        public static final int textView6=0x7f0a004e;
+        public static final int textView7=0x7f0a0048;
+        public static final int textView8=0x7f0a004d;
         public static final int textview=0x7f0a0052;
         public static final int title=0x7f0a0027;
         public static final int tv1=0x7f0a0045;
         public static final int tv2=0x7f0a0047;
-        public static final int tv3=0x7f0a004c;
+        public static final int tv3=0x7f0a004f;
         public static final int tv4=0x7f0a0046;
-        public static final int tv5=0x7f0a004f;
-        public static final int tv6=0x7f0a0050;
+        public static final int tv5=0x7f0a004b;
+        public static final int tv6=0x7f0a004c;
         public static final int up=0x7f0a0008;
         public static final int useLogo=0x7f0a0012;
         public static final int withText=0x7f0a001a;

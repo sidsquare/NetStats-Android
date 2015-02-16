@@ -34,7 +34,7 @@ public class cfrag3 extends Fragment
         b.setDepth((float) 2.1);
         //b.setDrawHorizontalGrid(false);
         b.setDrawVerticalGrid(false);
-        b.animateXY(1000,1000);
+        b.animateXY(1000,2000);
         b.setDescription("");
 
         b.setDrawYLabels(false);

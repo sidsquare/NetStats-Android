@@ -82,51 +82,7 @@ public class MainActivity extends ActionBarActivity
         sharedPref = getSharedPreferences("setting", Context.MODE_PRIVATE);
 
         editor = sharedPref.edit();
-        if (!sharedPref.contains("cur_month"))
-            editor.putInt("cur_month", 1);
-        if (!sharedPref.contains("start_at_boot"))
-            editor.putBoolean("start_at_boot", false);
-        if (!sharedPref.contains("noti_visible"))
-            editor.putBoolean("noti_visible", false);
-        if (!sharedPref.contains("noti_visible2"))
-            editor.putBoolean("noti_visible2", false);
-        if (!sharedPref.contains("not_pers"))
-            editor.putBoolean("not_pers", false);
-        if (!sharedPref.contains("flimit"))
-            editor.putLong("flimit", 0);
-        if (!sharedPref.contains("is_app_open"))
-            editor.putBoolean("is_app_open", true);
-        if (!sharedPref.contains("limit"))
-            editor.putString("limit", "1111110");
-        if (!sharedPref.contains("dnd"))
-            editor.putBoolean("dnd", false);
-        if (!sharedPref.contains("mobile_en"))
-            editor.putBoolean("mobile_en", false);
-        if (!sharedPref.contains("limit_on_wifi"))
-            editor.putBoolean("limit_on_wifi", false);
-        if (!sharedPref.contains("d_today"))
-            editor.putLong("d_today", 0);
-        if (!sharedPref.contains("u_today"))
-            editor.putLong("u_today", 0);
-        if (!sharedPref.contains("d_today_mob"))
-            editor.putLong("d_today_mob", 0);
-        if (!sharedPref.contains("u_today_mob"))
-            editor.putLong("u_today_mob", 0);
-        editor.putBoolean("is_app_open", true);
-        editor.putBoolean("dnd", false);
-
-        editor.commit();
-        Log.v(sharedPref.getString("limit", ""), String.valueOf(sharedPref.getLong("flimit", 0)));
-        d_offset = sharedPref.getLong("d_today", 0);
-        u_offset = sharedPref.getLong("u_today", 0);
-        d_offset_mob = sharedPref.getLong("d_today_mob", 0);
-        u_offset_mob = sharedPref.getLong("u_today_mob", 0);
-        editor.putLong("d_today", 0);
-        editor.putLong("u_today", 0);
-        editor.putLong("d_today_mob", 0);
-        editor.putLong("u_today_mob", 0);
-        editor.putBoolean("noti_visible2", false);
-        editor.commit();
+        setpref();
 
         stopService(new Intent(this, service.class));
         startService(new Intent(this, service.class));
@@ -155,6 +111,7 @@ public class MainActivity extends ActionBarActivity
             public void onItemClick(AdapterView<?> arg0, View v, int position, long id)
             {
                 mDrawerLayout.closeDrawers();
+                System.gc();
                 switch (position)
                 {
                     case 0:
@@ -299,9 +256,24 @@ public class MainActivity extends ActionBarActivity
         editor.putBoolean("noti_visible", true);
         editor.commit();
 
-        //call main function
-        prog();
+        //open the database
+        db = openOrCreateDatabase("database", Context.MODE_PRIVATE, null);
+        db.beginTransaction();
+        db.execSQL("CREATE TABLE IF NOT EXISTS transfer_week('date' VARCHAR NOT NULL UNIQUE,'down_transfer' integer,'up_transfer' integer,'down_transfer_mob' integer,'up_transfer_mob' integer);");
+        db.execSQL("create table if not exists transfer_hour('hour' integer not null unique,'down' integer,'up' integer,'down_mob' integer,'up_mob' integer);");
+        db.execSQL("create table if not exists this_month('package' varchar not null ,'date' varchar not null,'app' varchar,'down' integer,'up' integer,'down_mob' integer,'up_mob' integer);");
+        db.execSQL("create table if not exists app('package' varchar not null ,'down' integer,'up' integer,'down_mob' integer,'up_mob' integer);");
+
+        //get today's date and create entry
+        date = new SimpleDateFormat("yyyy-MM-dd").format(new Date());
+        Cursor c = db.rawQuery("select * from transfer_week where date=\"" + date + "\";", null);
+        if (c.getCount() == 0)
+            db.execSQL("insert into transfer_week values(\"" + date + "\",0,0,0,0);");
+        db.endTransaction();
+
+        handler.postDelayed(runnable, 1000);
     }
+
 
     //class for storing app information
     class MyClass
@@ -323,6 +295,7 @@ public class MainActivity extends ActionBarActivity
 
     private void setdata3()
     {
+        db.beginTransaction();
         ArrayList<String> xVals = new ArrayList<>();
         ArrayList<Entry> yVals1 = new ArrayList<>();
         final PackageManager pm = getPackageManager();
@@ -370,6 +343,7 @@ public class MainActivity extends ActionBarActivity
             if (tempe.rx > 0)
                 temp_f.add(tempe);
         }
+        db.endTransaction();
         //sort to get top 5 apps
         Collections.sort(temp_f, new MyIntComparable());
         try
@@ -409,7 +383,6 @@ public class MainActivity extends ActionBarActivity
             colors.add(c1);
 
         colors.add(ColorTemplate.getHoloBlue());
-
         set1.setColors(colors);
         frag4.go(xVals, set1);
 
@@ -418,6 +391,7 @@ public class MainActivity extends ActionBarActivity
     private void setdata2()
     {
         db = openOrCreateDatabase("database", Context.MODE_PRIVATE, null);
+        db.beginTransaction();
         Cursor c;
         if (!sharedPref.getBoolean("mobile_en", false))
             c = db.rawQuery("select hour,down,up from transfer_hour order by CAST(hour AS INTEGER);", null);
@@ -460,7 +434,7 @@ public class MainActivity extends ActionBarActivity
         set1.setStackLabels(new String[]{"Download", "Upload"});
         ArrayList<BarDataSet> dataSets = new ArrayList<>();
         dataSets.add(set1);
-
+        db.endTransaction();
         frag3.go(xVals, dataSets);
     }
 
@@ -474,6 +448,7 @@ public class MainActivity extends ActionBarActivity
     public void setdata()
     {
         db = openOrCreateDatabase("database", Context.MODE_PRIVATE, null);
+        db.beginTransaction();
         Cursor c;
         if (!sharedPref.getBoolean("mobile_en", false))
             c = db.rawQuery("select down_transfer from transfer_week order by date(date) asc limit 7;", null);
@@ -498,33 +473,14 @@ public class MainActivity extends ActionBarActivity
         }
 
         BarDataSet set1 = new BarDataSet(yVals1, "Data Usage in MB");
-        set1.setBarSpacePercent(0);
         set1.setColor(ColorTemplate.getHoloBlue());
-        set1.setBarSpacePercent(35f);
+        set1.setBarSpacePercent(25f);
         ArrayList<BarDataSet> dataSets = new ArrayList<>();
         dataSets.add(set1);
-
+        db.endTransaction();
         frag2.go(xVals, dataSets);
     }
 
-
-    private void prog()
-    {
-        //open the database
-        db = openOrCreateDatabase("database", Context.MODE_PRIVATE, null);
-        db.execSQL("CREATE TABLE IF NOT EXISTS transfer_week('date' VARCHAR NOT NULL UNIQUE,'down_transfer' integer,'up_transfer' integer,'down_transfer_mob' integer,'up_transfer_mob' integer);");
-        db.execSQL("create table if not exists transfer_hour('hour' integer not null unique,'down' integer,'up' integer,'down_mob' integer,'up_mob' integer);");
-        db.execSQL("create table if not exists this_month('package' varchar not null ,'date' varchar not null,'app' varchar,'down' integer,'up' integer,'down_mob' integer,'up_mob' integer);");
-        db.execSQL("create table if not exists app('package' varchar not null ,'down' integer,'up' integer,'down_mob' integer,'up_mob' integer);");
-
-        //get today's date and create entry
-        date = new SimpleDateFormat("yyyy-MM-dd").format(new Date());
-        Cursor c = db.rawQuery("select * from transfer_week where date=\"" + date + "\";", null);
-        if (c.getCount() == 0)
-            db.execSQL("insert into transfer_week values(\"" + date + "\",0,0,0,0);");
-
-        handler.postDelayed(runnable, 1000);
-    }
 
     private Runnable runnable = new Runnable()
     {
@@ -533,7 +489,7 @@ public class MainActivity extends ActionBarActivity
         {
 
             //intialize fragment at startup
-
+            db.beginTransaction();
             if (first_time)
             {
                 Cursor c = db.rawQuery("select down_transfer,up_transfer,down_transfer_mob,up_transfer_mob from transfer_week where date=\"" + date + "\";", null);
@@ -668,7 +624,6 @@ public class MainActivity extends ActionBarActivity
                 temp2 = df.format((float) up_data / divisor) + unit;
 
 
-
                 temp3 = df2.format((float) down_speed / divisor2) + unit2;
                 temp4 = df2.format((float) up_speed / divisor2) + unit2;
 
@@ -718,10 +673,10 @@ public class MainActivity extends ActionBarActivity
 
                 if (sharedPref.getBoolean("noti_visible", false))
                 {
-                    builder.setContentText("Down : " + df2.format((float) down_speed / divisor2) + unit2+"   " + "Up : " +df2.format((float) down_speed / divisor2) + unit2);
+                    builder.setContentText("Down : " + df2.format((float) down_speed / divisor2) + unit2 + "   " + "Up : " + df2.format((float) down_speed / divisor2) + unit2);
                     notificationManger.notify(1, builder.build());
                 }
-
+                db.endTransaction();
                 handler.postDelayed(this, 1000);
             }
             catch (NullPointerException n)
@@ -787,5 +742,54 @@ public class MainActivity extends ActionBarActivity
         editor.commit();
         Intent serviceIntent = new Intent(this, service.class);
         startService(serviceIntent);
+    }
+
+    public void setpref()
+    {
+        if (!sharedPref.contains("cur_month"))
+            editor.putInt("cur_month", 1);
+        if (!sharedPref.contains("start_at_boot"))
+            editor.putBoolean("start_at_boot", false);
+        if (!sharedPref.contains("noti_visible"))
+            editor.putBoolean("noti_visible", false);
+        if (!sharedPref.contains("noti_visible2"))
+            editor.putBoolean("noti_visible2", false);
+        if (!sharedPref.contains("not_pers"))
+            editor.putBoolean("not_pers", false);
+        if (!sharedPref.contains("flimit"))
+            editor.putLong("flimit", 0);
+        if (!sharedPref.contains("is_app_open"))
+            editor.putBoolean("is_app_open", true);
+        if (!sharedPref.contains("limit"))
+            editor.putString("limit", "1111110");
+        if (!sharedPref.contains("dnd"))
+            editor.putBoolean("dnd", false);
+        if (!sharedPref.contains("mobile_en"))
+            editor.putBoolean("mobile_en", false);
+        if (!sharedPref.contains("limit_on_wifi"))
+            editor.putBoolean("limit_on_wifi", false);
+        if (!sharedPref.contains("d_today"))
+            editor.putLong("d_today", 0);
+        if (!sharedPref.contains("u_today"))
+            editor.putLong("u_today", 0);
+        if (!sharedPref.contains("d_today_mob"))
+            editor.putLong("d_today_mob", 0);
+        if (!sharedPref.contains("u_today_mob"))
+            editor.putLong("u_today_mob", 0);
+        editor.putBoolean("is_app_open", true);
+        editor.putBoolean("dnd", false);
+
+        editor.commit();
+        Log.v(sharedPref.getString("limit", ""), String.valueOf(sharedPref.getLong("flimit", 0)));
+        d_offset = sharedPref.getLong("d_today", 0);
+        u_offset = sharedPref.getLong("u_today", 0);
+        d_offset_mob = sharedPref.getLong("d_today_mob", 0);
+        u_offset_mob = sharedPref.getLong("u_today_mob", 0);
+        editor.putLong("d_today", 0);
+        editor.putLong("u_today", 0);
+        editor.putLong("d_today_mob", 0);
+        editor.putLong("u_today_mob", 0);
+        editor.putBoolean("noti_visible2", false);
+        editor.commit();
     }
 }

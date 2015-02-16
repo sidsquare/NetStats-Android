@@ -33,7 +33,7 @@ public class cfrag2 extends Fragment
         b.setDepth((float) 2.1);
         //b.setDrawHorizontalGrid(false);
         b.setDrawVerticalGrid(false);
-        b.animateXY(1000,1000);
+        b.animateXY(1000, 1000);
         b.setDescription("This Week");
         b.setDrawLegend(true);
 
@@ -43,7 +43,6 @@ public class cfrag2 extends Fragment
         xl.setTextSize(10f);
         xl.setCenterXLabelText(true);
         xl.setSpaceBetweenLabels(0);
-
 
 
 
