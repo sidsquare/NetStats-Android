@@ -113,8 +113,8 @@
                 android:layout_alignTop="@+id/textView3"
                 android:layout_alignParentRight="true"
                 android:layout_alignParentEnd="true"
-                android:paddingLeft="20dp"
-                android:paddingRight="15dp"/>
+                android:paddingLeft="5dp"
+                android:paddingRight="30dp"/>
 
             <TextView
                 android:layout_width="wrap_content"
@@ -160,20 +160,19 @@
                 android:layout_alignLeft="@+id/tv5"
                 android:layout_alignStart="@+id/tv5"
                 android:layout_toStartOf="@+id/tv8"
-                android:layout_alignRight="@+id/tv5"
-                android:layout_alignEnd="@+id/tv5"/>
+                android:layout_toLeftOf="@+id/tv8"/>
 
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="0 KB"
                 android:id="@+id/tv8"
-                android:layout_alignParentRight="true"
-                android:layout_alignParentEnd="true"
                 android:layout_alignTop="@+id/tv7"
                 android:layout_alignBottom="@+id/tv7"
                 android:layout_alignLeft="@+id/tv6"
-                android:layout_alignStart="@+id/tv6"/>
+                android:layout_alignStart="@+id/tv6"
+                android:layout_alignParentRight="true"
+                android:layout_alignParentEnd="true"/>
 
         </RelativeLayout>
             <RelativeLayout
