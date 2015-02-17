@@ -3,7 +3,6 @@ package com.siddharth.netstats;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.os.Bundle;
-import android.preference.Preference;
 import android.preference.PreferenceFragment;
 import android.preference.PreferenceManager;
 
@@ -23,7 +22,11 @@ public class preference extends PreferenceFragment
         prefMgr.setSharedPreferencesMode(Context.MODE_PRIVATE);
         prefs = prefMgr.getSharedPreferences();
         addPreferencesFromResource(R.xml.preference);
-        Preference myPref = (Preference) findPreference("purge");
+        SharedPreferences.Editor e = prefs.edit();
+        if (!prefs.contains("purge"))
+            e.putBoolean("purge", false);
+        e.commit();
+       /* Preference myPref = (Preference) findPreference("purge");
         myPref.setOnPreferenceClickListener(new Preference.OnPreferenceClickListener()
         {
             public boolean onPreferenceClick(Preference preference)
@@ -33,7 +36,7 @@ public class preference extends PreferenceFragment
                 e.commit();
                 return false;
             }
-        });
+        });*/
         prefs.registerOnSharedPreferenceChangeListener(
                 new SharedPreferences.OnSharedPreferenceChangeListener()
                 {

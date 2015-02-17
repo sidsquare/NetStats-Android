@@ -18,7 +18,7 @@ public class cfrag1 extends Fragment
 
         return inflater.inflate(R.layout.cfrag1, container, false);
     }
-    public void go(String temp1,String temp2,String temp3,String temp4 ,String temp5,String temp6)
+    public void go(String temp1,String temp2,String temp3,String temp4 ,String temp5,String temp6,String temp7,String temp8)
     {
         //Log.v("gdfg", temp5);
         TextView t1=(TextView)getView().findViewById(R.id.tv1);
@@ -33,6 +33,10 @@ public class cfrag1 extends Fragment
         t1.setText(temp5);
         t1=(TextView)getView().findViewById(R.id.tv6);
         t1.setText(temp6);
+        t1=(TextView)getView().findViewById(R.id.tv7);
+        t1.setText(temp7);
+        t1=(TextView)getView().findViewById(R.id.tv8);
+        t1.setText(temp8);
         //Log.v("dsfs", "end");
     }
 }

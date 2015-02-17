@@ -275,7 +275,7 @@ public class service extends Service
 
             if (prefs.getBoolean("noti_visible_serv", false))
             {
-                int l = Integer.parseInt(prefs.getString("listPref2", "")) - 1;
+                int l = Integer.parseInt(prefs.getString("listPref2", "1")) - 1;
                 String unit2;
                 if (l == 0)
                     unit2 = " KBPS";

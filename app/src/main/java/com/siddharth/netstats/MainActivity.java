@@ -53,7 +53,7 @@ public class MainActivity extends ActionBarActivity
 {
 
     boolean mob, cfrag1_is_enabled = false, first_time = true;
-    String temp1 = "0 KB", temp2 = "0 KB", temp3 = "0 KBPS", temp4 = "0 KBPS", temp5 = "0 KB", temp6 = "0 KB", date;
+    String temp1 = "0 KB", temp2 = "0 KB",temp7 = "0 KB", temp8 = "0 KB", temp3 = "0 KBPS", temp4 = "0 KBPS", temp5 = "0 KB", temp6 = "0 KB", date;
     private Handler handler = new Handler();
     static long rx, tx, temp_rx, temp_tx, d_offset = 0, u_offset = 0, rx1, tx1, d_offset_mob = 0, u_offset_mob = 0, rx_mob, tx_mob, rx1_mob, tx1_mob, temp_rx_mob = 0, temp_tx_mob = 0;
     cfrag1 frag;
@@ -128,7 +128,7 @@ public class MainActivity extends ActionBarActivity
                         if (frag != null)
                         {
                             cfrag1_is_enabled = true;
-                            frag.go(temp1, temp2, temp3, temp4, temp5, temp6);
+                            frag.go(temp1, temp2, temp3, temp4, temp5, temp6,temp7,temp8);
                         }
                         break;
                     case 1:
@@ -449,30 +449,37 @@ public class MainActivity extends ActionBarActivity
         db.beginTransaction();
         Cursor c;
         if (!sharedPref.getBoolean("mobile_en", false))
-            c = db.rawQuery("select down_transfer from transfer_week order by date(date) asc limit 7;", null);
+            c = db.rawQuery("select down_transfer,up_transfer,date from transfer_week order by date(date) desc limit 7;", null);
         else
-            c = db.rawQuery("select down_transfer_mob from transfer_week order by date(date) asc limit 7;", null);
+            c = db.rawQuery("select down_transfer_mob,up_transfer_mob,date from transfer_week order by date(date) desc limit 7;", null);
 
         //charting
         ArrayList<String> xVals = new ArrayList<>();
         int count = 7;
+        c.moveToLast();
         for (int i = 0; i < count; i++)
         {
-            xVals.add("" + i);
+            try{
+            xVals.add("" + c.getString(2).substring(5));}
+            catch (Exception r)
+            {
+                xVals.add("02-20");
+            }
+            c.moveToPrevious();
         }
         ArrayList<BarEntry> yVals1 = new ArrayList<>();
-        c.moveToFirst();
+        c.moveToLast();
         int i = 0;
         while (i < c.getCount())
         {
-            yVals1.add(new BarEntry((float) c.getInt(0) / 1024, i));
-            c.moveToNext();
+            yVals1.add(new BarEntry((float) (c.getInt(0)+c.getInt(1)) / 1024, i));
+            c.moveToPrevious();
             i++;
         }
 
         BarDataSet set1 = new BarDataSet(yVals1, "Data Usage in MB");
         set1.setColor(ColorTemplate.getHoloBlue());
-        set1.setBarSpacePercent(25f);
+        set1.setBarSpacePercent(12f);
         ArrayList<BarDataSet> dataSets = new ArrayList<>();
         dataSets.add(set1);
         db.endTransaction();
@@ -512,20 +519,18 @@ public class MainActivity extends ActionBarActivity
                 temp_tx = tx;
                 temp_rx_mob = rx_mob;
                 temp_tx_mob = tx_mob;
-                frag.go(temp1, temp2, temp3, temp4, temp5, temp6);
+                frag.go(temp1, temp2, temp3, temp4, temp5, temp6,temp7,temp8);
                 first_time = false;
             }
             /*if(sharedPref.getBoolean("purge",false))
             {
                 self_destruct();
             }*/
-            db.beginTransaction();
-
             try
             {
                 //get and set current stats
                 if (cfrag1_is_enabled && frag != null)
-                    frag.go(temp1, temp2, temp3, temp4, temp5, temp6);
+                    frag.go(temp1, temp2, temp3, temp4, temp5, temp6,temp7,temp8);
                 rx1 = TrafficStats.getTotalRxBytes();
                 rx1 = rx1 / (1024);
                 tx1 = TrafficStats.getTotalTxBytes();
@@ -536,13 +541,14 @@ public class MainActivity extends ActionBarActivity
                 tx1_mob = tx1_mob / (1024);
 
                 mob = sharedPref.getBoolean("mobile_en", false);
-                long down_speed, up_speed, down_data, up_data, x, y, a, b;
+                long down_speed, up_speed, down_data, up_data, x, y, a, b,e,d;
 
                 //mobile
                 x = rx1_mob - rx_mob;
                 y = tx1_mob - tx_mob;
                 a = rx1_mob - temp_rx_mob;
                 b = tx1_mob - temp_tx_mob;
+                e=rx1_mob;d=tx1_mob;
                 d_offset_mob += a;
                 u_offset_mob += b;
 
@@ -619,13 +625,15 @@ public class MainActivity extends ActionBarActivity
                 }
                 else
                 {
-
+                    e=rx1;d=tx1;
                     temp5 = df.format((float) d_offset / divisor) + unit;
                     temp6 = df.format((float) u_offset / divisor) + unit;
 
                 }
                 temp1 = df.format((float) down_data / divisor) + unit;
                 temp2 = df.format((float) up_data / divisor) + unit;
+                temp7 = df.format((float)  e/ divisor) + unit;
+                temp8 = df.format((float) d / divisor) + unit;
 
 
                 temp3 = df2.format((float) down_speed / divisor2) + unit2;
@@ -682,7 +690,6 @@ public class MainActivity extends ActionBarActivity
                     builder.setContentText("Down : " + df2.format((float) down_speed / divisor2) + unit2 + "   " + "Up : " + df2.format((float) down_speed / divisor2) + unit2);
                     notificationManger.notify(1, builder.build());
                 }
-                db.endTransaction();
             }
             catch (NullPointerException n)
             {
@@ -693,7 +700,7 @@ public class MainActivity extends ActionBarActivity
         }
     };
 
-    private void self_destruct()
+   /* private void self_destruct()
     {
         db.execSQL("delete from 'transfer_week';");
         db.execSQL("delete from 'transfer_hour';");
@@ -707,7 +714,7 @@ public class MainActivity extends ActionBarActivity
         Cursor c = db.rawQuery("select * from transfer_week where date=\"" + date + "\";", null);
         if (c.getCount() == 0)
             db.execSQL("insert into transfer_week values(\"" + date + "\",0,0,0,0);");
-    }
+    }*/
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu)

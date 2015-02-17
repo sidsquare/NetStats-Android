@@ -16,7 +16,6 @@
         <receiver android:name=".boot">
             <intent-filter>
                 <action android:name="android.intent.action.BOOT_COMPLETED" />
-                <uses-permission android:name="android.permission.DEVICE_POWER" />
                 <action android:name="android.intent.action.ACTION_SHUTDOWN" />
             </intent-filter>
         </receiver>

@@ -34,7 +34,7 @@ public class cfrag2 extends Fragment
         //b.setDrawHorizontalGrid(false);
         b.setDrawVerticalGrid(false);
         b.animateXY(1000, 1000);
-        b.setDescription("This Week");
+        b.setDescription("Last 7 Days");
         b.setDrawLegend(true);
 
         b.setDrawYLabels(false);
