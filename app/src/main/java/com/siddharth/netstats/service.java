@@ -45,7 +45,10 @@ public class service extends Service
     {
         try
         {
+
             //cutting all links
+            Log.v("fsdfsdf", String.valueOf(prefs.getLong("d_today", 0)));
+
             db.close();
             notificationManger.cancel(1);
             h.removeCallbacksAndMessages(null);
@@ -137,7 +140,7 @@ public class service extends Service
             temp_rx = temp_rx / (1024);
             temp_tx = temp_tx / (1024);
             db = openOrCreateDatabase("database", Context.MODE_PRIVATE, null);
-            db.execSQL("CREATE TABLE IF NOT EXISTS transfer_week('date' VARCHAR NOT NULL UNIQUE,'down_transfer' integer,'up_transfer' integer,'down_transfer_mob' integer,'up_transfer_mob' integer);");
+            db.execSQL("create table if not exists transfer_week('date' VARCHAR NOT NULL UNIQUE,'down_transfer' integer,'up_transfer' integer,'down_transfer_mob' integer,'up_transfer_mob' integer);");
             db.execSQL("create table if not exists transfer_hour('hour' integer not null unique,'down' integer,'up' integer,'down_mob' integer,'up_mob' integer);");
             db.execSQL("create table if not exists this_month('package' varchar not null ,'date' varchar not null,'app' varchar,'down' integer,'up' integer,'down_mob' integer,'up_mob' integer);");
             db.execSQL("create table if not exists app('package' varchar not null ,'down' integer,'up' integer,'down_mob' integer,'up_mob' integer);");
@@ -158,6 +161,7 @@ public class service extends Service
 
             //getting current stats
             long rx, tx, speed_rx, speed_tx, rx_mob, tx_mob, speed_rx_mob, speed_tx_mob;
+
             rx = TrafficStats.getTotalRxBytes();
             tx = TrafficStats.getTotalTxBytes();
             rx = rx / (1024);
@@ -166,6 +170,7 @@ public class service extends Service
             speed_tx = tx - temp_tx;
             temp_tx = tx;
             temp_rx = rx;
+
             rx_mob = TrafficStats.getMobileRxBytes();
             tx_mob = TrafficStats.getMobileTxBytes();
             rx_mob = rx_mob / (1024);
@@ -178,9 +183,11 @@ public class service extends Service
             //updating daily values
             editor.putLong("d_today", prefs.getLong("d_today", 0) + speed_rx);
             editor.putLong("u_today", prefs.getLong("u_today", 0) + speed_tx);
-            editor.putLong("d_today_mob", prefs.getLong("d_today", 0) + speed_rx);
-            editor.putLong("u_today_mob", prefs.getLong("u_today", 0) + speed_tx);
+            editor.putLong("d_today_mob", prefs.getLong("d_today_mob", 0) + speed_rx_mob);
+            editor.putLong("u_today_mob", prefs.getLong("u_today_mob", 0) + speed_tx_mob);
             editor.commit();
+            Log.v("fgnf", String.valueOf(prefs.getLong("d_today",0)));
+
 
             //checking for gc
             if (counter == 30)
@@ -199,7 +206,7 @@ public class service extends Service
             int t3 = now.month + 1;
             Cursor c = db.rawQuery("select * from transfer_hour where hour=\"" + String.valueOf(t2) + "\";", null);
             if (c.getCount() == 0)
-                db.execSQL("insert into transfer_hour values(\"" + String.valueOf(t2) + "\",0,0,0,0);");
+                db.execSQL("insert into transfer_hour values(\"" + String.valueOf(t2) + "\",20,20,20,20);");
 
             db.execSQL("update transfer_hour set down_mob=down_mob+" + speed_rx_mob + " , up_mob=up_mob+" + speed_tx_mob + " , down=down+" + speed_rx + " , up=up+" + speed_tx + " where hour = '" + String.valueOf(t2) + "';");
 
@@ -209,7 +216,8 @@ public class service extends Service
                 editor = prefs.edit();
 
                 Log.v("change", "date");
-
+                db.execSQL("insert into transfer_week values(\"" + temp + "\",30,30,30,30);");
+                date=temp;
                 db.execSQL("update transfer_week set down_transfer=" + prefs.getLong("d_today", 0) + " , up_transfer=" + prefs.getLong("u_today", 0) + " , down_transfer_mob=" + prefs.getLong("d_today_mob", 0) + " , up_transfer_mob=" + prefs.getLong("u_today_mob", 0) + " where date = '" + date + "';");
 
                 editor.putLong("d_today", 0);
@@ -232,7 +240,7 @@ public class service extends Service
 
 
             //limit
-            if (mob == true)
+            if (mob == true || prefs.getBoolean("limit_on_wifi",false))
             {
                 editor.putLong("flimit", prefs.getLong("flimit", 0) + speed_rx + speed_tx);
                 editor.commit();
@@ -292,9 +300,9 @@ public class service extends Service
 
                 builder.setContentText("Down : " + df2.format((float) speed_rx / divisor2) + unit2 + "   " + "Up : " + df2.format((float) speed_tx / divisor2) + unit2);
                 notificationManger.notify(1, builder.build());
-            }
+                db.execSQL("update transfer_week set down_transfer=" + prefs.getLong("d_today", 0) + " , up_transfer=" + prefs.getLong("u_today", 0) + " , down_transfer_mob=" + prefs.getLong("d_today_mob", 0) + " , up_transfer_mob=" + prefs.getLong("u_today_mob", 0) + " where date = '" + date + "';");
 
-            db.close();
+            }
             h.postDelayed(this, 1000);
         }
     };

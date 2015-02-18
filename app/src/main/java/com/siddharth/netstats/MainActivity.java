@@ -267,7 +267,7 @@ public class MainActivity extends ActionBarActivity
         date = new SimpleDateFormat("yyyy-MM-dd").format(new Date());
         Cursor c = db.rawQuery("select * from transfer_week where date=\"" + date + "\";", null);
         if (c.getCount() == 0)
-            db.execSQL("insert into transfer_week values(\"" + date + "\",0,0,0,0);");
+            db.execSQL("insert into transfer_week values(\"" + date + "\",10,10,10,10);");
 
         handler.postDelayed(runnable, 1000);
     }
@@ -463,7 +463,7 @@ public class MainActivity extends ActionBarActivity
             xVals.add("" + c.getString(2).substring(5));}
             catch (Exception r)
             {
-                xVals.add("02-20");
+                xVals.add("");
             }
             c.moveToPrevious();
         }
@@ -500,11 +500,15 @@ public class MainActivity extends ActionBarActivity
                 Cursor c = db.rawQuery("select down_transfer,up_transfer,down_transfer_mob,up_transfer_mob from transfer_week where date=\"" + date + "\";", null);
                 if (c.getCount() != 0)
                 {
+                    Log.v(String.valueOf(d_offset), String.valueOf(sharedPref.getLong("d_today",0)));
+
                     c.moveToFirst();
                     d_offset = c.getInt(0);
                     u_offset = c.getInt(1);
                     d_offset_mob = c.getInt(2);
                     u_offset_mob = c.getInt(3);
+                    Log.v(String.valueOf(d_offset), String.valueOf(sharedPref.getLong("d_today",0)));
+
                 }
 
                 rx = TrafficStats.getTotalRxBytes();
@@ -560,6 +564,13 @@ public class MainActivity extends ActionBarActivity
                 d_offset += down_speed;
                 u_offset += up_speed;
 
+                editor.putLong("d_today", d_offset);
+                editor.putLong("u_today", u_offset);
+                editor.putLong("d_today_mob", d_offset_mob);
+                editor.putLong("u_today_mob", u_offset_mob);
+                editor.commit();
+                Log.v(String.valueOf(d_offset), String.valueOf(sharedPref.getLong("d_today",0)));
+
                 //automatic date change
                 Time now = new Time();
                 now.setToNow();
@@ -571,7 +582,12 @@ public class MainActivity extends ActionBarActivity
                     date = temp;
                     d_offset = u_offset = 0;
                     d_offset_mob = u_offset_mob = 0;
-                    db.execSQL("insert into transfer_week values(\"" + temp + "\",0,0,0,0);");//changing date back to original --- handle sql exception later
+                    editor.putLong("d_today", 0);
+                    editor.putLong("u_today", 0);
+                    editor.putLong("d_today_mob", 0);
+                    editor.putLong("u_today_mob", 0);
+                    editor.commit();
+                    db.execSQL("insert into transfer_week values(\"" + temp + "\",40,40,40,40);");//changing date back to original --- handle sql exception later
                 }
                 db.execSQL("update transfer_week set down_transfer_mob=down_transfer_mob+" + a + " , up_transfer_mob=up_transfer_mob+" + b + " , down_transfer=down_transfer+" + down_speed + " , up_transfer=up_transfer+" + up_speed + " where date = '" + date + "';");
                 Cursor c = db.rawQuery("select * from transfer_hour where hour=\"" + String.valueOf(t2) + "\";", null);
@@ -646,7 +662,7 @@ public class MainActivity extends ActionBarActivity
 
 
                 //limit
-                if(mob==true)
+                if(mob==true || sharedPref.getBoolean("limit_on_wifi",false))
                 {
                     editor.putLong("flimit", sharedPref.getLong("flimit", 0) + down_speed + up_speed);
                     editor.commit();
@@ -690,6 +706,7 @@ public class MainActivity extends ActionBarActivity
                     builder.setContentText("Down : " + df2.format((float) down_speed / divisor2) + unit2 + "   " + "Up : " + df2.format((float) down_speed / divisor2) + unit2);
                     notificationManger.notify(1, builder.build());
                 }
+
             }
             catch (NullPointerException n)
             {
@@ -765,6 +782,7 @@ public class MainActivity extends ActionBarActivity
         SharedPreferences.Editor editor = sharedPref.edit();
         editor.putBoolean("dnd", true);
         editor.putLong("d_today", d_offset);
+        Log.v("47777", String.valueOf(sharedPref.getLong("d_today",0)));
         editor.putLong("u_today", u_offset);
         editor.putLong("d_today_mob", d_offset);
         editor.putLong("u_today_mob", u_offset);
@@ -813,10 +831,13 @@ public class MainActivity extends ActionBarActivity
 
         editor.commit();
         Log.v(sharedPref.getString("limit", ""), String.valueOf(sharedPref.getLong("flimit", 0)));
+
         d_offset = sharedPref.getLong("d_today", 0);
         u_offset = sharedPref.getLong("u_today", 0);
         d_offset_mob = sharedPref.getLong("d_today_mob", 0);
         u_offset_mob = sharedPref.getLong("u_today_mob", 0);
+
+        Log.v(String.valueOf(d_offset), String.valueOf(sharedPref.getLong("d_today",0)));
         editor.putLong("d_today", 0);
         editor.putLong("u_today", 0);
         editor.putLong("d_today_mob", 0);
