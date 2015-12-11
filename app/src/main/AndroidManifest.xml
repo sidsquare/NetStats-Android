@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+          xmlns:tools="http://schemas.android.com/tools"
+          package="com.siddharth.netstats" >
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    <uses-permission android:name="android.permission.DEVICE_POWER"
+                     tools:ignore="ProtectedPermissions"/>
+    <uses-permission android:name="android.permission.READ_PHONE_STATE"/>
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
+    <uses-permission
+        android:name="android.permission.PACKAGE_USAGE_STATS"
+        tools:ignore="ProtectedPermissions" />
+    <application
+        android:allowBackup="true"
+        android:icon="@drawable/large"
+        android:label="@string/app_name"
+        android:theme="@style/AppTheme"
+        android:screenOrientation="portrait">
+        <receiver android:name=".boot">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="android.intent.action.ACTION_SHUTDOWN" />
+            </intent-filter>
+        </receiver>
+        <receiver android:name=".notification">
+        </receiver>
+        <activity
+            android:name=".MainActivity"
+            android:label="@string/app_name" android:screenOrientation="portrait"
+            android:launchMode="singleTop">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+
+        </activity>
+
+        <service android:enabled="true" android:name=".service" />
+        <service android:enabled="true" android:name=".ShutdownService" />
+        <activity
+            android:name=".cfrag1"
+            android:label="@string/app_name" >
+            android:parentActivityName=".MainActivity">
+
+        </activity>
+        <activity
+            android:name=".cfrag3"
+            android:label="@string/app_name" >
+            android:parentActivityName=".MainActivity">
+
+        </activity>
+        <activity
+            android:name=".cfrag4"
+            android:label="@string/app_name" >
+            android:parentActivityName=".MainActivity">
+
+        </activity>
+        <activity
+            android:name=".preference"
+            android:label="@string/app_name" >
+            android:parentActivityName=".MainActivity">
+
+        </activity>
+        <activity
+            android:name=".cfrag2"
+            android:label="@string/app_name" >
+            android:parentActivityName=".MainActivity">
+        </activity>
+        <activity
+            android:name=".notification"
+            android:label="@string/app_name" >
+            android:parentActivityName=".MainActivity">
+        </activity>
+    </application>
+
+</manifest>
