@@ -34,6 +34,11 @@ import com.github.mikephil.charting.data.BarEntry;
 import com.github.mikephil.charting.data.Entry;
 import com.github.mikephil.charting.utils.ColorTemplate;
 
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.IOException;
 import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -42,25 +47,29 @@ import java.util.Date;
 import java.util.List;
 
 import static java.lang.Math.pow;
-
 public class MainActivity extends AppCompatActivity {
 
-    private static boolean viewingWifi = false, firstTime = true, freeze = false;
+    private static boolean viewingWifi = false, firstTime = true;
     public static boolean refreshGraph = false;
-    private static String unit1, unit2, temp1 = "--", temp2 = "--", temp7 = "--", temp8 = "--", temp3 = "--", temp4 = "--", temp5 = "--", temp6 = "--", date;
-    private static Handler handler = new Handler();
-    private static long last_save_rx, last_save_tx, divisor1, divisor2, rx, tx, temp_rx, temp_tx, d_offset = 0, u_offset = 0, d_offset_mob = 0, u_offset_mob = 0, rx_mob, tx_mob, temp_rx_mob = 0, temp_tx_mob = 0, d1, d2, d3, d4;
+    static String line, unit1, unit2, temp1 = "--", temp2 = "--", temp7 = "--", temp8 = "--", temp3 = "--", temp4 = "--", temp5 = "--", temp6 = "--", date;
+    private final Handler handler = new Handler();
+    private static long divisor1, divisor2, RX, TX, RX2, TX2, tempRX, tempTX, offsetRX = 0, offsetTX = 0, offsetRXMob = 0, offsetTXMob = 0, RXMob, TXMob, RXMob2, TXMob2, tempRXMob = 0, tempTXMob = 0, d1, d2, d3, d4;
     private static SQLiteDatabase db;
     private static SharedPreferences sharedPref;
-    private static Notification notification, n2;
+    static Notification notification, n2;
     private static NotificationManager notificationManger, nm2;
-    private static Notification.Builder builder, builder1;
+     static Notification.Builder builder, builder1;
     private static SharedPreferences.Editor editor;
     private static DecimalFormat df1, df2;
+    static Time now;
+    static BufferedReader reader;
+    private static final File procFile = new File("/proc/net/xt_qtaguid/iface_stat_fmt");
+    static String[] values;
+    private static int timer = 0;
 
-    wFrag w1;
-    mFrag m1;
-    ViewPager vPager;
+    private wFrag w1;
+    private mFrag m1;
+    private ViewPager vPager;
 
     @TargetApi(Build.VERSION_CODES.LOLLIPOP)
     @Override
@@ -162,7 +171,7 @@ public class MainActivity extends AppCompatActivity {
         Cursor c = db.rawQuery("select * from transfer_stats where date=\"" + date + "\";", null);
         if (c.getCount() == 0)
             db.execSQL("insert into transfer_stats values(\"" + date + "\",0,0,0,0);");
-
+        c.close();
         handler.postDelayed(runnable, 1000);
     }
 
@@ -175,7 +184,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     //comparion function
-    public class MyIntComparable implements Comparator<MyClass> {
+    private class MyIntComparable implements Comparator<MyClass> {
         @Override
         public int compare(MyClass o1, MyClass o2) {
             return (o1.rx > o2.rx ? -1 : (o1.rx.equals(o2.rx) ? 0 : 1));
@@ -215,15 +224,15 @@ public class MainActivity extends AppCompatActivity {
             /*Cursor c = db.rawQuery("select * from app where package=\"" + tempe.package_name + "\";", null);
             if (c.getCount() == 0) {
                 db.execSQL("insert into app values(\"" + tempe.package_name + "\",0,0,0,0);");
-                tempe.rx = (long) 0 + uid_rx;
+                tempe.RX = (long) 0 + uid_rx;
             } else {
                 c.moveToFirst();
                 if (!sharedPref.getBoolean("mobile_en", false))
-                    tempe.rx = (long) c.getInt(1) + uid_rx + (long) c.getInt(2) + uid_tx;
+                    tempe.RX = (long) c.getInt(1) + uid_rx + (long) c.getInt(2) + uid_tx;
                 else
-                    tempe.rx = (long) c.getInt(3) + uid_rx + (long) c.getInt(4) + uid_tx;
+                    tempe.RX = (long) c.getInt(3) + uid_rx + (long) c.getInt(4) + uid_tx;
             }
-            if (tempe.rx > 0)
+            if (tempe.RX > 0)
                 temp_f.add(tempe);
         }
         db.endTransaction();
@@ -234,7 +243,7 @@ public class MainActivity extends AppCompatActivity {
             for (int x = 0; x < 5; x++) {
                 MyClass ex = temp_f.get(x);
                 xVals.add(ex.app);
-                yVals1.add(new Entry((float) ex.rx / 1024, x));
+                yVals1.add(new Entry((float) ex.RX / 1024, x));
             }
         } catch (IndexOutOfBoundsException gh) {
 
@@ -306,11 +315,12 @@ public class MainActivity extends AppCompatActivity {
         set1.setStackLabels(new String[]{"Download", "Upload"});
         ArrayList<BarDataSet> dataSets = new ArrayList<>();
         dataSets.add(set1);
+        c.close();
         db.endTransaction();
         // frag3.go(xVals, dataSets);
     }
 
-    public void setdata() {
+    private void setdata() {
         db = openOrCreateDatabase("database", Context.MODE_PRIVATE, null);
         db.beginTransaction();
         Cursor c;
@@ -354,7 +364,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
 
-    private Runnable runnable = new Runnable() {
+    private final Runnable runnable = new Runnable() {
         @Override
         public void run() {
             //initialize fragment at startup
@@ -363,26 +373,42 @@ public class MainActivity extends AppCompatActivity {
                 setdata();
                 Cursor c = db.rawQuery("select down_transfer,up_transfer,down_transfer_mob,up_transfer_mob from transfer_stats where date=\"" + date + "\";", null);
                 if (c.getCount() != 0) {
-                    Log.v(String.valueOf(d_offset), String.valueOf(sharedPref.getLong("d_today", 0)));
+                    Log.v(String.valueOf(offsetRX), String.valueOf(sharedPref.getLong("d_today", 0)));
 
                     c.moveToFirst();
-                    d_offset = c.getInt(0);
-                    u_offset = c.getInt(1);
-                    d_offset_mob = c.getInt(2);
-                    u_offset_mob = c.getInt(3);
-                    Log.v(String.valueOf(d_offset), String.valueOf(sharedPref.getLong("d_today", 0)));
+                    offsetRX = c.getInt(0);
+                    offsetTX = c.getInt(1);
+                    offsetRXMob = c.getInt(2);
+                    offsetTXMob = c.getInt(3);
+                    Log.v(String.valueOf(offsetRX), String.valueOf(sharedPref.getLong("d_today", 0)));
 
                 }
-
-                temp_rx_mob = TrafficStats.getMobileRxBytes();
-                temp_tx_mob = TrafficStats.getMobileTxBytes();
-                if (temp_rx_mob == 0) {
-                    temp_rx = TrafficStats.getTotalRxBytes() - last_save_rx;
-                    temp_tx = TrafficStats.getTotalTxBytes() - last_save_tx;
-                } else {
-                    temp_rx = TrafficStats.getTotalRxBytes() - TrafficStats.getMobileRxBytes();
-                    temp_tx = TrafficStats.getTotalTxBytes() - TrafficStats.getMobileTxBytes();
+c.close();
+                //getting current stats from proc file
+                try {
+                    reader = new BufferedReader(new FileReader(procFile));
+                    reader.readLine();
+                    while ((line = reader.readLine()) != null) {
+                        values = line.split(" ");
+                        if (values[0].equals("rmnet0")) {
+                            Log.v("values are --> " + values[1], values[3]);
+                            tempRXMob = Long.parseLong(values[1]);
+                            tempTXMob = Long.parseLong(values[3]);
+                        } else if (values[0].equals("wlan0")) {
+                            Log.v("values are --> " + values[1], values[3]);
+                            tempRX = Long.parseLong(values[1]);
+                            tempTX = Long.parseLong(values[3]);
+                        }
+                    }
+                    reader.close();
+                } catch (FileNotFoundException e) {
+                    Log.v("FileNotFoundException", "iface_stat_fmt not found");
+                    e.printStackTrace();
+                } catch (IOException e) {
+                    Log.v("IOException", "iface_stat_fmt not opened");
+                    e.printStackTrace();
                 }
+
                 firstTime = false;
             }
             /*if(sharedPref.getBoolean("purge",false))
@@ -404,74 +430,78 @@ public class MainActivity extends AppCompatActivity {
                             break;
                     }
 
-                    //fix for the broken mobile data fetching bug in 5.0+
-                    if (TrafficStats.getMobileRxBytes() == 0 && !freeze)
-                        freeze = true;
-                    else if (TrafficStats.getMobileRxBytes() != 0 && freeze) {
-                        freeze = false;
-                        temp_rx_mob = TrafficStats.getMobileRxBytes();
-                        temp_tx_mob = TrafficStats.getMobileTxBytes();
+                    try {
+                        reader = new BufferedReader(new FileReader(procFile));
+                        reader.readLine();
+                        while ((line = reader.readLine()) != null) {
+                            values = line.split(" ");
+                            if (values[0].equals("rmnet0")) {
+                                Log.v("values are --> " + values[1], values[3]);
+                                RXMob = Long.parseLong(values[1]);
+                                TXMob = Long.parseLong(values[3]);
+                            } else if (values[0].equals("wlan0")) {
+                                Log.v("values are --> " + values[1], values[3]);
+                                RX = Long.parseLong(values[1]);
+                                TX = Long.parseLong(values[3]);
+                            }
+                        }
+                        reader.close();
+                    } catch (FileNotFoundException e) {
+                        Log.v("FileNotFoundException", "iface_stat_fmt not found");
+                        e.printStackTrace();
+                    } catch (IOException e) {
+                        Log.v("IOException", "iface_stat_fmt not opened");
+                        e.printStackTrace();
                     }
-
                     if (wifiEnabled()) {
 
-                        rx = TrafficStats.getTotalRxBytes() - last_save_rx;
-                        tx = TrafficStats.getTotalTxBytes() - last_save_rx;
+                        RX2 = RX - tempRX;
+                        TX2 = TX - tempTX;
 
-                        rx = rx - temp_rx;
-                        tx = tx - temp_tx;
+                        offsetRX += RX2;
+                        offsetTX += TX2;
 
-                        Log.v(String.valueOf(TrafficStats.getTotalRxBytes()), String.valueOf(temp_rx));
-                        Log.v("dsfsdfs" + last_save_rx, String.valueOf(d_offset));
-                        d_offset += rx;
-                        u_offset += tx;
+                        editor.putLong("d_today", offsetRX);
+                        editor.putLong("u_today", offsetTX);
 
-                        editor.putLong("d_today", d_offset);
-                        editor.putLong("u_today", u_offset);
+                        d1 = d1 + RX2;
+                        d2 = d2 + TX2;
 
-                        d1 = d1 + rx;
-                        d2 = d2 + tx;
-                        if (d1 < 0)
-                            Log.v("-------------------", "eeeeeeeeeeeeeeeeeeeeeee");
-                        temp_rx = temp_rx + rx;
-                        temp_tx = temp_tx + tx;
-                    } else if (!freeze) {
-                        last_save_rx = rx_mob = TrafficStats.getMobileRxBytes();
-                        last_save_tx = tx_mob = TrafficStats.getMobileTxBytes();
-                        editor.putLong("last_save_rx", last_save_rx);
-                        editor.putLong("last_save_tx", last_save_tx);
+                        tempRX = tempRX + RX2;
+                        tempTX = tempTX + TX2;
+                    } else {
 
                         //speed calculation
-                        rx_mob = rx_mob - temp_rx_mob;
-                        tx_mob = tx_mob - temp_tx_mob;
+                        RXMob2 = RXMob - tempRXMob;
+                        TXMob2 = TXMob - tempTXMob;
 
 
                         //storing day offset values
-                        d_offset_mob += rx_mob;
-                        u_offset_mob += tx_mob;
+                        offsetRXMob += RXMob2;
+                        offsetTXMob += TXMob2;
 
-                        editor.putLong("d_today_mob", d_offset_mob);
-                        editor.putLong("u_today_mob", u_offset_mob);
+                        editor.putLong("d_today_mob", offsetRXMob);
+                        editor.putLong("u_today_mob", offsetTXMob);
 
-                        d3 = d3 + rx_mob;
-                        d4 = d4 + tx_mob;
+                        d3 = d3 + RXMob2;
+                        d4 = d4 + TXMob2;
 
-                        temp_rx_mob = temp_rx_mob + rx_mob;
-                        temp_tx_mob = temp_tx_mob + tx_mob;
+                        tempRXMob = tempRXMob + RXMob2;
+                        tempTXMob = tempTXMob + TXMob2;
 
                     }
                     editor.commit();
 
                     //automatic date change
-                    Time now = new Time();
+                    now = new Time();
                     now.setToNow();
                     String temp = new SimpleDateFormat("yyyy-MM-dd").format(new Date());
                     int t2 = now.hour;
                     int t3 = now.month + 1;
                     if (temp.compareTo(date) != 0) {
                         date = temp;
-                        d_offset = u_offset = 0;
-                        d_offset_mob = u_offset_mob = 0;
+                        offsetRX = offsetTX = 0;
+                        offsetRXMob = offsetTXMob = 0;
                         editor.putLong("d_today", 0);
                         editor.putLong("u_today", 0);
                         editor.putLong("d_today_mob", 0);
@@ -479,7 +509,7 @@ public class MainActivity extends AppCompatActivity {
                         editor.commit();
                         db.execSQL("insert into transfer_stats values(\"" + temp + "\",0,0,0,0);");//changing date back to original --- handle sql exception later
                     }
-                    db.execSQL("update transfer_stats set down_transfer_mob=" + d_offset_mob + " , up_transfer_mob=" + u_offset_mob + " , down_transfer=" + d_offset + " , up_transfer=" + u_offset + " where date = '" + date + "';");
+                    db.execSQL("update transfer_stats set down_transfer_mob=" + offsetRXMob + " , up_transfer_mob=" + offsetTXMob + " , down_transfer=" + offsetRX + " , up_transfer=" + offsetTX + " where date = '" + date + "';");
 
                     formatUnits();
 
@@ -487,21 +517,21 @@ public class MainActivity extends AppCompatActivity {
                     if (viewingWifi) {
                         temp1 = df1.format((float) d1 / divisor1) + unit1;
                         temp2 = df1.format((float) d2 / divisor1) + unit1;
-                        temp3 = df1.format((float) d_offset / divisor1) + unit1;
-                        temp4 = df1.format((float) u_offset / divisor1) + unit1;
-                        temp5 = df1.format((float) (TrafficStats.getTotalRxBytes() - last_save_rx) / divisor1) + unit1;
-                        temp6 = df1.format((float) (TrafficStats.getTotalTxBytes() - last_save_tx) / divisor1) + unit1;
-                        temp7 = df2.format((float) rx / divisor2) + unit2;
-                        temp8 = df2.format((float) tx / divisor2) + unit2;
+                        temp3 = df1.format((float) offsetRX / divisor1) + unit1;
+                        temp4 = df1.format((float) offsetTX / divisor1) + unit1;
+                        temp5 = df1.format((float) RX / divisor1) + unit1;
+                        temp6 = df1.format((float) TX / divisor1) + unit1;
+                        temp7 = df2.format((float) RX2 / divisor2) + unit2;
+                        temp8 = df2.format((float) TX2 / divisor2) + unit2;
                     } else {
                         temp1 = df1.format((float) d3 / divisor1) + unit1;
                         temp2 = df1.format((float) d4 / divisor1) + unit1;
-                        temp3 = df1.format((float) d_offset_mob / divisor1) + unit1;
-                        temp4 = df1.format((float) u_offset_mob / divisor1) + unit1;
-                        temp5 = df1.format((float) last_save_rx / divisor1) + unit1;
-                        temp6 = df1.format((float) last_save_tx / divisor1) + unit1;
-                        temp7 = df2.format((float) rx_mob / divisor2) + unit2;
-                        temp8 = df2.format((float) tx_mob / divisor2) + unit2;
+                        temp3 = df1.format((float) offsetRXMob / divisor1) + unit1;
+                        temp4 = df1.format((float) offsetTXMob / divisor1) + unit1;
+                        temp5 = df1.format((float) RXMob / divisor1) + unit1;
+                        temp6 = df1.format((float) TXMob / divisor1) + unit1;
+                        temp7 = df2.format((float) RXMob2 / divisor2) + unit2;
+                        temp8 = df2.format((float) TXMob2 / divisor2) + unit2;
                     }
 
 
@@ -513,9 +543,9 @@ public class MainActivity extends AppCompatActivity {
 
                     //limit
                     if (!(wifiEnabled()) || sharedPref.getBoolean("limit_on_wifi", true)) {
-                        editor.putLong("flimit", sharedPref.getLong("flimit", 0) + rx + rx_mob + tx + tx_mob);
+                        editor.putLong("flimit", sharedPref.getLong("flimit", 0) + RX2 + RXMob2 + TX2 + TXMob2);
                         editor.commit();
-
+                        //hardcode below
                         if (sharedPref.getLong("flimit", 0) >= (Long.parseLong(sharedPref.getString("limit", "0")) * 1024) && !sharedPref.getBoolean("noti_visible2", false)) {
                             builder1 = new Notification.Builder(getApplicationContext());
                             builder1.setContentTitle("Warning");
@@ -550,7 +580,7 @@ public class MainActivity extends AppCompatActivity {
 
                     if (sharedPref.getBoolean("noti_visible", false)) {
                         if (wifiEnabled())
-                            builder.setContentText("Down : " + df2.format((float) (rx_mob + rx) / divisor2) + unit2 + "   " + "Up : " + df2.format((float) (tx + tx_mob) / divisor2) + unit2);
+                            builder.setContentText("Down : " + df2.format((float) (RXMob2 + RX2) / divisor2) + unit2 + "   " + "Up : " + df2.format((float) (TX2 + TXMob2) / divisor2) + unit2);
                         notificationManger.notify(1, builder.build());
                     }
 
@@ -558,7 +588,12 @@ public class MainActivity extends AppCompatActivity {
                     Log.v("piss off", String.valueOf(n.getMessage()));
                 }
             }
-            handler.postDelayed(this, 1000);
+            if (timer == 30) {
+                System.gc();
+                timer = 0;
+            }
+            timer++;
+            handler.postDelayed(runnable, 1000);
         }
     };
 
@@ -608,15 +643,12 @@ public class MainActivity extends AppCompatActivity {
          if (c.getCount() == 0)
              db.execSQL("insert into transfer_week values(\"" + date + "\",0,0,0,0);");
      }*/
-    public boolean wifiEnabled() {
+    private boolean wifiEnabled() {
         final ConnectivityManager connMgr = (ConnectivityManager)
                 this.getSystemService(Context.CONNECTIVITY_SERVICE);
         final android.net.NetworkInfo wifi = connMgr.getNetworkInfo(ConnectivityManager.TYPE_WIFI);
         final android.net.NetworkInfo mobile = connMgr.getNetworkInfo(ConnectivityManager.TYPE_MOBILE);
-        if (wifi.isConnectedOrConnecting())
-            return true;
-        else
-            return false;
+        return wifi.isConnectedOrConnecting();
     }
 
     @Override
@@ -659,18 +691,18 @@ public class MainActivity extends AppCompatActivity {
         notificationManger.cancel(1);
         SharedPreferences.Editor editor = sharedPref.edit();
         editor.putBoolean("dnd", true);
-        editor.putLong("d_today", d_offset);
+        editor.putLong("d_today", offsetRX);
         Log.v("47777", String.valueOf(sharedPref.getLong("d_today", 0)));
-        editor.putLong("u_today", u_offset);
-        editor.putLong("d_today_mob", d_offset);
-        editor.putLong("u_today_mob", u_offset);
+        editor.putLong("u_today", offsetTX);
+        editor.putLong("d_today_mob", offsetRX);
+        editor.putLong("u_today_mob", offsetTX);
 
         editor.commit();
         Intent serviceIntent = new Intent(this, service.class);
         //startService(serviceIntent);
     }
 
-    public void setpref() {
+    private void setpref() {
         if (!sharedPref.contains("cur_month"))
             editor.putInt("cur_month", 1);
         if (!sharedPref.contains("start_at_boot"))
@@ -701,10 +733,6 @@ public class MainActivity extends AppCompatActivity {
             editor.putLong("d_today_mob", 0);
         if (!sharedPref.contains("u_today_mob"))
             editor.putLong("u_today_mob", 0);
-        if (!sharedPref.contains("last_save_rx"))
-            editor.putLong("last_save_rx", 0);
-        if (!sharedPref.contains("last_save_tx"))
-            editor.putLong("last_save_tx", 0);
         if (!sharedPref.contains("purge"))
             editor.putBoolean("purge", false);
         editor.putBoolean("is_app_open", true);
@@ -713,14 +741,12 @@ public class MainActivity extends AppCompatActivity {
         editor.commit();
         Log.v(sharedPref.getString("limit", ""), String.valueOf(sharedPref.getLong("flimit", 0)));
 
-        d_offset = sharedPref.getLong("d_today", 0);
-        u_offset = sharedPref.getLong("u_today", 0);
-        d_offset_mob = sharedPref.getLong("d_today_mob", 0);
-        u_offset_mob = sharedPref.getLong("u_today_mob", 0);
-        last_save_rx = sharedPref.getLong("last_save_rx", 0);
-        last_save_tx = sharedPref.getLong("last_save_tx", 0);
+        offsetRX = sharedPref.getLong("d_today", 0);
+        offsetTX = sharedPref.getLong("u_today", 0);
+        offsetRXMob = sharedPref.getLong("d_today_mob", 0);
+        offsetTXMob = sharedPref.getLong("u_today_mob", 0);
 
-        Log.v(String.valueOf(d_offset), String.valueOf(sharedPref.getLong("d_today", 0)));
+        Log.v(String.valueOf(offsetRX), String.valueOf(sharedPref.getLong("d_today", 0)));
         editor.putLong("d_today", 0);
         editor.putLong("u_today", 0);
         editor.putLong("d_today_mob", 0);

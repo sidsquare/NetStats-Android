@@ -20,8 +20,8 @@ import com.github.mikephil.charting.utils.XLabels;
 import java.util.ArrayList;
 
 public class mFrag extends Fragment {
-    public static View v;
-    public static ImageButton button;
+    private static View v;
+    private static ImageButton button;
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {

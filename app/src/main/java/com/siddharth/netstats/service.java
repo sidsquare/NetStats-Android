@@ -159,7 +159,7 @@ public class service extends Service {
         }
     }
 
-    private Runnable runnable = new Runnable() {
+    private final Runnable runnable = new Runnable() {
         @Override
         public void run() {
 
@@ -303,9 +303,6 @@ public class service extends Service {
                 this.getSystemService(Context.CONNECTIVITY_SERVICE);
         final android.net.NetworkInfo wifi = connMgr.getNetworkInfo(ConnectivityManager.TYPE_WIFI);
         final android.net.NetworkInfo mobile = connMgr.getNetworkInfo(ConnectivityManager.TYPE_MOBILE);
-        if (wifi.isConnectedOrConnecting())
-            return true;
-        else
-            return false;
+        return wifi.isConnectedOrConnecting();
     }
 }
