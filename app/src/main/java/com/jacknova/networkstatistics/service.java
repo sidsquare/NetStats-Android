@@ -1,6 +1,7 @@
-package com.siddharth.netstats;
+package com.jacknova.networkstatistics;
 
 
+import android.annotation.TargetApi;
 import android.app.Notification;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
@@ -13,12 +14,17 @@ import android.database.sqlite.SQLiteDatabase;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.net.ConnectivityManager;
-import android.net.TrafficStats;
+import android.os.Build;
 import android.os.Handler;
 import android.os.IBinder;
 import android.text.format.Time;
 import android.util.Log;
 
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.IOException;
 import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -26,20 +32,45 @@ import java.util.Date;
 import static java.lang.Math.pow;
 
 public class service extends Service {
-    private static String date, temp7, temp8;
-    private static int counter = 0, t2, t3;
+    private static String line;
+    private static String unit2;
+    private final Handler handler = new Handler();
+    private static long divisor2;
+    private static long d1;
+    private static long d2;
+    private static long d3;
+    private static long d4;
+    private static long RX;
+    private static long TX;
+    private static long RX2;
+    private static long TX2;
+    private static long tempRX;
+    private static long tempTX;
+    private static long offsetRX = 0;
+    private static long offsetTX = 0;
+    private static long offsetRXMob = 0;
+    private static long offsetTXMob = 0;
+    private static long RXMob;
+    private static long TXMob;
+    private static long RXMob2;
+    private static long TXMob2;
+    private static long tempRXMob = 0;
+    private static long tempTXMob = 0;
+    private static DecimalFormat df2;
+    private static BufferedReader reader;
+    private static final File procFile = new File("/proc/net/xt_qtaguid/iface_stat_fmt");
+    private static String[] values;
+    private static int timer = 0;
+    private static String date;
     private static final Handler h = new Handler();
-    private static long speed_rx, speed_tx, speed_rx_mob, speed_tx_mob;
-    private static final Time now = new Time();
+    private static Time now = new Time();
     private static Cursor c;
-    private static long rx, tx, temp_rx, temp_tx, d_offset = 0, u_offset = 0, d_offset_mob = 0, u_offset_mob = 0, rx_mob, tx_mob, temp_rx_mob = 0, temp_tx_mob = 0, d1, d2, d3, d4;
     private static SQLiteDatabase db;
     private static SharedPreferences sharedPref;
     private static Notification notification, n2;
     private static NotificationManager notificationManger, nm2;
     private static Notification.Builder builder, builder1;
     private static SharedPreferences.Editor editor;
-    private static boolean mob, first_time = true;
 
     @Override
     public IBinder onBind(Intent intent) {
@@ -51,7 +82,6 @@ public class service extends Service {
 
             //cutting all links
             Log.v("fsdfsdf", String.valueOf(sharedPref.getLong("d_today", 0)));
-
             db.close();
             notificationManger.cancel(1);
             h.removeCallbacksAndMessages(null);
@@ -60,6 +90,7 @@ public class service extends Service {
 
     }
 
+    @TargetApi(Build.VERSION_CODES.JELLY_BEAN)
     @Override
     public void onStart(Intent intent, int startid) {
         sharedPref = getApplicationContext().getSharedPreferences("setting", Context.MODE_PRIVATE);
@@ -109,20 +140,32 @@ public class service extends Service {
             now.setToNow();
             date = new SimpleDateFormat("yyyy-MM-dd").format(new Date());
 
+            /*
+           notificationManger = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+            notificationManger.notify(1, notification);
+            editor.putBoolean("noti_visible", true);
+            editor.commit();*/
+
             //building the notification
-            Intent notificationIntent = new Intent(this, MainActivity.class);
+            Intent notificationIntent = new Intent(this,MainActivity.class);
             notificationIntent.setFlags(Intent.FLAG_ACTIVITY_BROUGHT_TO_FRONT);
             PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, notificationIntent, PendingIntent.FLAG_UPDATE_CURRENT);
-            builder = new Notification.Builder(getApplicationContext());
-            builder.setContentTitle("NetStats (Service)");
+            builder = new Notification.Builder(this);
+            builder.setDeleteIntent(pendingIntent);
+            builder.setContentTitle("Network Statistics Service");
             builder.setContentText("---");
             builder.setSmallIcon(R.drawable.dffd);
             Bitmap bm = BitmapFactory.decodeResource(getResources(), R.drawable.large);
             builder.setLargeIcon(bm);
             builder.setAutoCancel(true);
             builder.setPriority(Notification.PRIORITY_HIGH);
+            if (sharedPref.getBoolean("not_pers", false))
+                builder.setOngoing(true);
+            builder.setContentIntent(pendingIntent);
+
             Intent intent2 = new Intent(this, notification.class);
             PendingIntent pendintIntent = PendingIntent.getBroadcast(this, 0, intent2, 0);
+
             builder.setDeleteIntent(pendintIntent);
             if (sharedPref.getBoolean("not_pers", false))
                 builder.setOngoing(true);
@@ -138,72 +181,130 @@ public class service extends Service {
             db = openOrCreateDatabase("database", Context.MODE_PRIVATE, null);
             db.execSQL("create table if not exists transfer_stats('date' VARCHAR NOT NULL UNIQUE,'down_transfer' integer,'up_transfer' integer,'down_transfer_mob' integer,'up_transfer_mob' integer);");
             date = new SimpleDateFormat("yyyy-MM-dd").format(new Date());
-            Cursor c = db.rawQuery("select * from transfer_stats where date=\"" + date + "\";", null);
+            c = db.rawQuery("select * from transfer_stats where date=\"" + date + "\";", null);
             if (c.getCount() == 0)
                 db.execSQL("insert into transfer_stats values(\"" + date + "\",0,0,0,0);");
             c = db.rawQuery("select down_transfer,up_transfer,down_transfer_mob,up_transfer_mob from transfer_stats where date=\"" + date + "\";", null);
             if (c.getCount() != 0) {
-                c.moveToFirst();
-                d1 = d_offset = c.getInt(0);
-                d2 = u_offset = c.getInt(1);
-                d3 = d_offset_mob = c.getInt(2);
-                d4 = u_offset_mob = c.getInt(3);
-            }
+                Log.v(String.valueOf(offsetRX), String.valueOf(sharedPref.getLong("d_today", 0)));
 
-            temp_rx_mob = TrafficStats.getMobileRxBytes();
-            temp_tx_mob = TrafficStats.getMobileTxBytes();
-            temp_rx = TrafficStats.getTotalRxBytes() - TrafficStats.getMobileRxBytes();
-            temp_tx = TrafficStats.getTotalTxBytes() - TrafficStats.getMobileTxBytes();
+                c.moveToFirst();
+                offsetRX = c.getInt(0);
+                offsetTX = c.getInt(1);
+                offsetRXMob = c.getInt(2);
+                offsetTXMob = c.getInt(3);
+                Log.v(String.valueOf(offsetRX), String.valueOf(sharedPref.getLong("d_today", 0)));
+
+            }
+            c.close();
+            //getting current stats from proc file
+            try {
+                reader = new BufferedReader(new FileReader(procFile));
+                reader.readLine();
+                while ((line = reader.readLine()) != null) {
+                    values = line.split(" ");
+                    if (values[0].equals("rmnet0")) {
+                        Log.v("values are --> " + values[1], values[3]);
+                        tempRXMob = Long.parseLong(values[1]);
+                        tempTXMob = Long.parseLong(values[3]);
+                    } else if (values[0].equals("wlan0")) {
+                        Log.v("values are --> " + values[1], values[3]);
+                        tempRX = Long.parseLong(values[1]);
+                        tempTX = Long.parseLong(values[3]);
+                    }
+                }
+                reader.close();
+            } catch (FileNotFoundException e) {
+                Log.v("FileNotFoundException", "iface_stat_fmt not found");
+                e.printStackTrace();
+            } catch (IOException e) {
+                Log.v("IOException", "iface_stat_fmt not opened");
+                e.printStackTrace();
+            }
+            formatUnits();
             System.gc();
             h.postDelayed(runnable, 1000);
         }
     }
 
     private final Runnable runnable = new Runnable() {
+        @TargetApi(Build.VERSION_CODES.JELLY_BEAN)
         @Override
         public void run() {
 
-            /*if(sharedPref.getBoolean("purge",false))
-            {
-                self_destruct();
-            }*/
             try {
-                //get and set current stats
+                try {
+                    reader = new BufferedReader(new FileReader(procFile));
+                    reader.readLine();
+                    while ((line = reader.readLine()) != null) {
+                        values = line.split(" ");
+                        if (values[0].equals("rmnet0")) {
+                            Log.v("values are --> " + values[1], values[3]);
+                            RXMob = Long.parseLong(values[1]);
+                            TXMob = Long.parseLong(values[3]);
+                        } else if (values[0].equals("wlan0")) {
+                            Log.v("values are --> " + values[1], values[3]);
+                            RX = Long.parseLong(values[1]);
+                            TX = Long.parseLong(values[3]);
+                        }
+                    }
+                    reader.close();
+                } catch (FileNotFoundException e) {
+                    Log.v("FileNotFoundException", "iface_stat_fmt not found");
+                    e.printStackTrace();
+                } catch (IOException e) {
+                    Log.v("IOException", "iface_stat_fmt not opened");
+                    e.printStackTrace();
+                }
+                if (wifiEnabled()) {
 
-                rx_mob = TrafficStats.getMobileRxBytes();
-                tx_mob = TrafficStats.getMobileTxBytes();
-                rx = TrafficStats.getTotalRxBytes() - TrafficStats.getMobileRxBytes();
-                tx = TrafficStats.getTotalTxBytes() - TrafficStats.getMobileTxBytes();
+                    RX2 = RX - tempRX;
+                    TX2 = TX - tempTX;
 
-                //speed calculation
-                rx_mob = Math.abs(rx_mob - temp_rx_mob);
-                tx_mob = Math.abs(tx_mob - temp_tx_mob);
-                rx = Math.abs(rx - temp_rx);
-                tx = Math.abs(tx - temp_tx);
+                    offsetRX += RX2;
+                    offsetTX += TX2;
 
-                //storing day offset values
-                d_offset += rx;
-                u_offset += tx;
-                d_offset_mob += rx_mob;
-                u_offset_mob += tx_mob;
+                    editor.putLong("d_today", offsetRX);
+                    editor.putLong("u_today", offsetTX);
 
-                editor.putLong("d_today", d_offset);
-                editor.putLong("u_today", u_offset);
-                editor.putLong("d_today_mob", d_offset_mob);
-                editor.putLong("u_today_mob", u_offset_mob);
+                    d1 = d1 + RX2;
+                    d2 = d2 + TX2;
+
+                    tempRX = tempRX + RX2;
+                    tempTX = tempTX + TX2;
+                } else {
+
+                    //speed calculation
+                    RXMob2 = RXMob - tempRXMob;
+                    TXMob2 = TXMob - tempTXMob;
+
+
+                    //storing day offset values
+                    offsetRXMob += RXMob2;
+                    offsetTXMob += TXMob2;
+
+                    editor.putLong("d_today_mob", offsetRXMob);
+                    editor.putLong("u_today_mob", offsetTXMob);
+
+                    d3 = d3 + RXMob2;
+                    d4 = d4 + TXMob2;
+
+                    tempRXMob = tempRXMob + RXMob2;
+                    tempTXMob = tempTXMob + TXMob2;
+
+                }
                 editor.commit();
-                Log.v(String.valueOf(d_offset), String.valueOf(sharedPref.getLong("d_today", 0)));
 
                 //automatic date change
-                Time now = new Time();
+                now = new Time();
                 now.setToNow();
                 String temp = new SimpleDateFormat("yyyy-MM-dd").format(new Date());
-                int t2 = now.hour;
+                //int t2 = now.hour;
                 int t3 = now.month + 1;
                 if (temp.compareTo(date) != 0) {
                     date = temp;
-                    d_offset = u_offset = 0;
-                    d_offset_mob = u_offset_mob = 0;
+                    offsetRX = offsetTX = 0;
+                    offsetRXMob = offsetTXMob = 0;
                     editor.putLong("d_today", 0);
                     editor.putLong("u_today", 0);
                     editor.putLong("d_today_mob", 0);
@@ -211,62 +312,31 @@ public class service extends Service {
                     editor.commit();
                     db.execSQL("insert into transfer_stats values(\"" + temp + "\",0,0,0,0);");//changing date back to original --- handle sql exception later
                 }
-                db.execSQL("update transfer_stats set down_transfer_mob=" + d_offset_mob + " , up_transfer_mob=" + u_offset_mob + " , down_transfer=" + d_offset + " , up_transfer=" + u_offset + " where date = '" + date + "';");
-
-                //formatting units for display
-                int l = Integer.parseInt(sharedPref.getString("listPref2", "1"));
-                String unit2;
-                if (l == 1)
-                    unit2 = " KBPS";
-                else if (l == 2)
-                    unit2 = " MBPS";
-                else
-                    unit2 = " GBPS";
-                long divisor2 = (long) pow(1024, l);
-                DecimalFormat df2;
-                if (l != 1)
-                    df2 = new DecimalFormat("0.000");
-                else
-                    df2 = new DecimalFormat("0");
-
-                d1 += rx;
-                d2 += tx;
-                d3 += rx_mob;
-                d4 += tx_mob;
-                //assigning current stat
-                if (!mob) {
-                    temp7 = df2.format((float) rx / divisor2) + unit2;
-                    temp8 = df2.format((float) tx / divisor2) + unit2;
-
-                } else {
-                    temp7 = df2.format((float) rx_mob / divisor2) + unit2;
-                    temp8 = df2.format((float) tx_mob / divisor2) + unit2;
-                }
-
-                temp_rx = temp_rx + rx;
-                temp_tx = temp_tx + tx;
-                temp_rx_mob = temp_rx_mob + rx_mob;
-                temp_tx_mob = temp_tx_mob + tx_mob;
+                db.execSQL("update transfer_stats set down_transfer_mob=" + offsetRXMob + " , up_transfer_mob=" + offsetTXMob + " , down_transfer=" + offsetRX + " , up_transfer=" + offsetTX + " where date = '" + date + "';");
 
                 //limit
-                /*if (mob == true || sharedPref.getBoolean("limit_on_wifi", false)) {
-                    editor.putLong("flimit", sharedPref.getLong("flimit", 0) + down_speed + up_speed);
+                if (!(wifiEnabled()) || sharedPref.getBoolean("limit_on_wifi", true)) {
+                    editor.putLong("flimit", sharedPref.getLong("flimit", 0) + RX2 + RXMob2 + TX2 + TXMob2);
                     editor.commit();
-
+                    //hardcode below
                     if (sharedPref.getLong("flimit", 0) >= (Long.parseLong(sharedPref.getString("limit", "0")) * 1024) && !sharedPref.getBoolean("noti_visible2", false)) {
                         builder1 = new Notification.Builder(getApplicationContext());
                         builder1.setContentTitle("Warning");
                         builder1.setContentText("You have reached the Monthly limit");
-                        builder1.setSmallIcon(R.drawable.no);
+                        builder1.setSmallIcon(R.drawable.dffd);
                         builder1.setAutoCancel(true);
-                        builder1.setPriority(Notification.PRIORITY_HIGH);
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
+                            builder1.setPriority(Notification.PRIORITY_HIGH);
+                        }
                         builder1.setOngoing(false);
-                        n2 = builder1.build();
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
+                            n2 = builder1.build();
+                        }
                         nm2 = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
                         nm2.notify(2, n2);
                         editor.putBoolean("noti_visible2", true);
                     }
-                }*/
+                }
 
                 //reseting data used on month change
                 if (t3 != sharedPref.getInt("cur_month", 0)) {
@@ -274,7 +344,7 @@ public class service extends Service {
                     editor.putInt("cur_month", t3);
                     editor.putBoolean("noti_visible2", false);
                     editor.commit();
-                    //nm2.cancelAll();
+                    nm2.cancelAll();
                 }
 
                 if (!sharedPref.getBoolean("not_pers", false))
@@ -286,23 +356,46 @@ public class service extends Service {
                 }
 
                 if (sharedPref.getBoolean("noti_visible", false)) {
-                    builder.setContentText("Down : " + temp7 + "   " + "Up : " + temp8);
+                    if (wifiEnabled())
+                        builder.setContentText("Down : " + df2.format((float) (RXMob2 + RX2) / divisor2) + unit2 + "   " + "Up : " + df2.format((float) (TX2 + TXMob2) / divisor2) + unit2);
                     notificationManger.notify(1, builder.build());
                 }
+
 
             } catch (Exception n) {
                 Log.v("piss off", String.valueOf(n.getMessage()));
             }
 
-            h.postDelayed(this, 1000);
+            if (timer == 30) {
+                System.gc();
+                timer = 0;
+            }
+            timer++;
+            handler.postDelayed(runnable, 1000);
         }
     };
 
-    public boolean wifiEnabled() {
+    private void formatUnits() {
+        //formatting units for display
+        int l = Integer.parseInt(sharedPref.getString("listPref2", "1"));
+        if (l == 1)
+            unit2 = " KBPS";
+        else if (l == 2)
+            unit2 = " MBPS";
+        else
+            unit2 = " GBPS";
+        divisor2 = (long) pow(1024, l);
+        if (l != 1)
+            df2 = new DecimalFormat("0.000");
+        else
+            df2 = new DecimalFormat("0");
+    }
+
+    private boolean wifiEnabled() {
         final ConnectivityManager connMgr = (ConnectivityManager)
-                this.getSystemService(Context.CONNECTIVITY_SERVICE);
+                getApplicationContext().getSystemService(Context.CONNECTIVITY_SERVICE);
         final android.net.NetworkInfo wifi = connMgr.getNetworkInfo(ConnectivityManager.TYPE_WIFI);
-        final android.net.NetworkInfo mobile = connMgr.getNetworkInfo(ConnectivityManager.TYPE_MOBILE);
+        //final android.net.NetworkInfo mobile = connMgr.getNetworkInfo(ConnectivityManager.TYPE_MOBILE);
         return wifi.isConnectedOrConnecting();
     }
 }

@@ -1,12 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+
+<ScrollView
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical">
-
-    <ScrollView
-        android:layout_width="match_parent"
-        android:layout_height="match_parent">
+    xmlns:android="http://schemas.android.com/apk/res/android">
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -43,6 +40,7 @@
                     android:id="@+id/textView1"
                     android:layout_below="@+id/textView0"
                     android:layout_alignStart="@+id/textView3"
+                    android:layout_alignLeft="@+id/textView3"
                     android:layout_marginTop="20dp" />
 
                 <TextView
@@ -53,16 +51,18 @@
                     android:layout_marginLeft="25dp"
                     android:layout_marginTop="20dp"
                     android:layout_below="@+id/textView1"
-                    android:layout_alignParentStart="true" />
+                    android:layout_alignParentStart="true"
+                    android:layout_alignParentLeft="true"/>
 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Lifetime"
+                    android:text="Since Boot"
                     android:id="@+id/textView4"
                     android:layout_marginLeft="25dp"
                     android:layout_marginTop="20dp"
                     android:layout_below="@+id/textView3"
+                    android:layout_alignParentLeft="true"
                     android:layout_alignParentStart="true" />
 
                 <TextView
@@ -73,6 +73,7 @@
                     android:layout_alignTop="@+id/textView1"
                     android:layout_centerHorizontal="true"
                     android:layout_marginLeft="0dp"
+                    android:layout_alignParentRight="true"
                     android:layout_alignParentEnd="true"
                     android:layout_marginRight="100dp" />
 
@@ -84,6 +85,7 @@
                     android:layout_alignBottom="@+id/textView3"
                     android:layout_centerHorizontal="true"
                     android:layout_marginLeft="0dp"
+                    android:layout_alignParentRight="true"
                     android:layout_alignParentEnd="true"
                     android:layout_marginRight="100dp" />
 
@@ -94,6 +96,7 @@
                     android:id="@+id/textView14"
                     android:layout_marginLeft="0dp"
                     android:layout_alignTop="@+id/textView4"
+                    android:layout_alignParentRight="true"
                     android:layout_alignParentEnd="true"
                     android:layout_marginRight="100dp" />
 
@@ -102,9 +105,10 @@
                     android:layout_height="wrap_content"
                     android:text="--"
                     android:id="@+id/textView18"
-                    android:layout_marginRight="20dp"
+                    android:layout_marginRight="10dp"
                     android:layout_marginEnd="52dp"
                     android:layout_alignTop="@+id/textView12"
+                    android:layout_alignParentRight="true"
                     android:layout_alignParentEnd="true" />
 
                 <TextView
@@ -113,7 +117,8 @@
                     android:text="--"
                     android:id="@+id/textView19"
                     android:layout_alignTop="@+id/textView13"
-                    android:layout_alignEnd="@+id/textView18" />
+                    android:layout_alignEnd="@+id/textView18"
+                    android:layout_alignRight="@+id/textView18"/>
 
                 <TextView
                     android:layout_width="wrap_content"
@@ -121,7 +126,8 @@
                     android:text="--"
                     android:id="@+id/textView20"
                     android:layout_alignTop="@+id/textView14"
-                    android:layout_alignEnd="@+id/textView19" />
+                    android:layout_alignEnd="@+id/textView19"
+                    android:layout_alignRight="@+id/textView19"/>
 
             </RelativeLayout>
             <RelativeLayout
@@ -143,6 +149,7 @@
                     android:layout_height="wrap_content"
                     android:text="Download"
                     android:id="@+id/textView10"
+                    android:layout_alignLeft="@+id/textView11"
                     android:layout_alignStart="@+id/textView11"
                     android:layout_marginTop="20dp"
                     android:layout_below="@+id/textView15" />
@@ -154,6 +161,7 @@
                     android:id="@+id/textView11"
                     android:layout_marginLeft="25dp"
                     android:layout_below="@+id/textView10"
+                    android:layout_alignParentLeft="true"
                     android:layout_alignParentStart="true"
                     android:layout_marginTop="20dp" />
 
@@ -166,6 +174,7 @@
                     android:layout_alignParentTop="true"
                     android:textSize="22sp"
                     android:layout_marginTop="3dp"
+                    android:layout_alignParentLeft="true"
                     android:layout_alignParentStart="true" />
 
                 <TextView
@@ -175,6 +184,7 @@
                     android:id="@+id/textView16"
                     android:layout_centerVertical="true"
                     android:layout_marginRight="50dp"
+                    android:layout_alignParentRight="true"
                     android:layout_alignParentEnd="true"
                     android:layout_alignTop="@+id/textView10" />
 
@@ -185,6 +195,7 @@
                     android:id="@+id/textView17"
                     android:layout_alignTop="@+id/textView11"
                     android:layout_marginRight="50dp"
+                    android:layout_alignParentRight="true"
                     android:layout_alignParentEnd="true" />
 
             </RelativeLayout>
@@ -218,15 +229,97 @@
                     android:layout_marginLeft="7dp" />
 
                 <ImageButton
+                    android:contentDescription="Refresh"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:id="@+id/imageButton"
                     android:src="@drawable/ic_action_refresh2"
                     android:background="#fafafa"
                     android:layout_alignBottom="@+id/textView"
-                    android:layout_alignEnd="@+id/chart" />
+                    android:layout_alignEnd="@+id/chart"
+                    android:layout_alignRight="@+id/chart"/>
 
+            </RelativeLayout>
+            <RelativeLayout
+                android:layout_width="fill_parent"
+                android:layout_height="400dp"
+                android:background="#fafafa"
+                android:padding="0dp"
+                android:layout_weight="1"
+                android:layout_marginLeft="15dp"
+                android:layout_marginRight="15dp"
+                android:layout_marginTop="10dp"
+                android:layout_marginBottom="10dp"
+                android:paddingTop="10dp">
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="App Chart"
+                    android:textSize="22sp"
+                    android:layout_marginLeft="15dp"
+                    android:layout_marginTop="13dp"
+                    android:id="@+id/textView.2" />
+                <com.github.mikephil.charting.charts.PieChart
+                    android:id="@+id/chart2"
+                    android:minHeight="5dp"
+                    android:minWidth="5dp"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:layout_below="@+id/textView.2"
+                    android:layout_marginRight="7dp"
+                    android:layout_marginLeft="7dp" />
+
+                <ImageButton
+                    android:contentDescription="Refresh"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:id="@+id/imageButton2"
+                    android:src="@drawable/ic_action_refresh2"
+                    android:background="#fafafa"
+                    android:layout_alignBottom="@+id/textView.2"
+                    android:layout_alignEnd="@+id/chart2"
+                    android:layout_alignRight="@+id/chart2"/>
+
+            </RelativeLayout>
+            <RelativeLayout
+                android:layout_width="fill_parent"
+                android:layout_height="400dp"
+                android:background="#fafafa"
+                android:padding="0dp"
+                android:layout_weight="1"
+                android:layout_marginLeft="15dp"
+                android:layout_marginRight="15dp"
+                android:layout_marginTop="10dp"
+                android:layout_marginBottom="10dp"
+                android:paddingTop="10dp">
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Hour Chart"
+                    android:textSize="22sp"
+                    android:layout_marginLeft="15dp"
+                    android:layout_marginTop="13dp"
+                    android:id="@+id/textView.3" />
+                <com.github.mikephil.charting.charts.BarChart
+                    android:id="@+id/chart3"
+                    android:minHeight="5dp"
+                    android:minWidth="5dp"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:layout_below="@+id/textView.3"
+                    android:layout_marginRight="7dp"
+                    android:layout_marginLeft="7dp" />
+
+                <ImageButton
+                    android:contentDescription="Refresh"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:id="@+id/imageButton3"
+                    android:src="@drawable/ic_action_refresh2"
+                    android:background="#fafafa"
+                    android:layout_alignBottom="@+id/textView.3"
+                    android:layout_alignEnd="@+id/chart3"
+                    android:layout_alignRight="@+id/chart3"/>
             </RelativeLayout>
         </LinearLayout>
     </ScrollView>
-</RelativeLayout>

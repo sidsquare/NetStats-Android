@@ -8,15 +8,13 @@
             android:summary="Select the unit of Data measurement"
             android:key="listPref"
             android:entries="@array/listentries"
-            android:entryValues="@array/listvalues"
-            android:defaultValue="1"/>
+            android:entryValues="@array/listvalues"/>
         <ListPreference
             android:title="Unit for Data Speed"
             android:summary="Select the unit of Speed measurement"
             android:key="listPref2"
             android:entries="@array/listentries2"
-            android:entryValues="@array/listvalues2"
-            android:defaultValue="1"/>
+            android:entryValues="@array/listvalues2"/>
     <CheckBoxPreference
         android:key="start_at_boot"
         android:title="Start on Boot"

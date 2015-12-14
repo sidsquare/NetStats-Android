@@ -1,16 +1,8 @@
-package com.siddharth.netstats;
+package com.jacknova.networkstatistics;
 
 import android.app.Service;
-import android.content.Context;
 import android.content.Intent;
-import android.content.pm.ApplicationInfo;
-import android.content.pm.PackageManager;
-import android.database.Cursor;
-import android.database.sqlite.SQLiteDatabase;
-import android.net.TrafficStats;
 import android.os.IBinder;
-
-import java.util.List;
 
 
 public class ShutdownService extends Service {
@@ -21,7 +13,7 @@ public class ShutdownService extends Service {
 
     @Override
     public void onStart(Intent intent, int startid) {
-        SQLiteDatabase db = openOrCreateDatabase("database", Context.MODE_PRIVATE, null);
+        /*SQLiteDatabase db = openOrCreateDatabase("database", Context.MODE_PRIVATE, null);
         db.execSQL("CREATE TABLE IF NOT EXISTS app('package' VARCHAR NOT NULL UNIQUE,'down' integer,'up' integer);");
 
         final PackageManager pm = getPackageManager();
@@ -46,6 +38,6 @@ public class ShutdownService extends Service {
             }
         }
 
-        db.close();
+        db.close();*/
     }
 }

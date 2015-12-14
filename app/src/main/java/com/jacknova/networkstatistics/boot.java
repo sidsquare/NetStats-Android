@@ -1,4 +1,4 @@
-package com.siddharth.netstats;
+package com.jacknova.networkstatistics;
 
 import android.content.BroadcastReceiver;
 import android.content.Context;
